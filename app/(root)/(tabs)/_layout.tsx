@@ -1,5 +1,5 @@
 import { Tabs } from "expo-router";
-import { MessageCircle, User, Users } from "lucide-react-native";
+import { MessageCircle, User2, Users } from "lucide-react-native";
 import React from "react";
 import { Platform, useColorScheme } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -96,12 +96,7 @@ export default function TabLayout() {
         options={{
           title: "Profile",
           tabBarIcon: ({ color, focused }) => (
-            <User
-              color={color}
-              size={24}
-              fill={focused ? color : "none"}
-              strokeWidth={focused ? 2.5 : 2}
-            />
+            <User2 color={color} size={24} strokeWidth={focused ? 2.5 : 2} />
           ),
         }}
       />
