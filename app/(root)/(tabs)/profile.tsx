@@ -1,3 +1,6 @@
+import { logout } from "@/app/redux/auth/auth.slice";
+import { useAppSelector } from "@/app/redux/hook";
+import { AppDispatch } from "@/app/redux/store";
 import { useRouter } from "expo-router";
 import {
   ArrowLeft,
@@ -5,6 +8,7 @@ import {
   Calendar,
   CheckCircle2,
   ChevronRight,
+  LogOut,
   MapPin,
   MoreVertical,
   Share2,
@@ -19,13 +23,25 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import Toast from "react-native-toast-message";
+import { useDispatch } from "react-redux";
 
 export default function ProfileDetailScreen() {
   const router = useRouter();
   const [isFollowing, setIsFollowing] = useState(false);
+  const dispatch = useDispatch<AppDispatch>();
+  const user = useAppSelector((state) => state.auth.user);
 
+  const handleLogout = () => {
+    dispatch(logout());
+    Toast.show({
+      type: "success",
+      text1: "Logged out successfully",
+    });
+    router.replace("/(auth)/sign-in");
+  };
   return (
-    <SafeAreaView className="flex-1 bg-white py-10">
+    <SafeAreaView className="flex-1 bg-white py-10 mb-6">
       <StatusBar barStyle="dark-content" />
 
       {/* Header */}
@@ -181,55 +197,24 @@ export default function ProfileDetailScreen() {
               <Text className="text-gray-700 text-sm">View community</Text>
               <ChevronRight size={18} color="#9CA3AF" />
             </TouchableOpacity>
-            <TouchableOpacity className="flex-row items-center justify-between py-3">
+            <TouchableOpacity className="flex-row items-center justify-between py-3 border-b border-gray-100">
               <Text className="text-gray-700 text-sm">View NDO</Text>
               <ChevronRight size={18} color="#9CA3AF" />
             </TouchableOpacity>
-          </View>
 
-          {/* Verified Badges */}
-          <View className="flex-row items-center space-x-4 pb-6">
-            <View className="flex-row items-center bg-gray-50 px-4 py-3 rounded-xl flex-1">
-              <View className="w-10 h-10 bg-blue-100 rounded-full items-center justify-center">
-                <Image
-                  source={{
-                    uri: "https://upload.wikimedia.org/wikipedia/commons/thumb/4/4e/Ubuntu_logo.svg/240px-Ubuntu_logo.svg.png",
-                  }}
-                  className="w-6 h-6"
-                  resizeMode="contain"
-                />
-              </View>
-              <View className="ml-3 flex-1">
-                <Text className="text-xs font-semibold text-gray-900">
-                  Ubuntu
+            {/* Logout Button */}
+            <TouchableOpacity
+              onPress={handleLogout}
+              className="flex-row items-center justify-between py-3 mt-2"
+            >
+              <View className="flex-row items-center">
+                <LogOut size={18} color="#EF4444" />
+                <Text className="text-red-500 text-sm font-semibold ml-3">
+                  Logout
                 </Text>
-                <View className="flex-row items-center mt-0.5">
-                  <CheckCircle2 size={12} color="#3B82F6" />
-                  <Text className="text-xs text-blue-500 ml-1">Verified</Text>
-                </View>
               </View>
-            </View>
-
-            <View className="flex-row items-center bg-gray-50 px-4 py-3 rounded-xl flex-1">
-              <View className="w-10 h-10 bg-orange-100 rounded-full items-center justify-center">
-                <Image
-                  source={{
-                    uri: "https://upload.wikimedia.org/wikipedia/commons/thumb/4/4e/Ubuntu_logo.svg/240px-Ubuntu_logo.svg.png",
-                  }}
-                  className="w-6 h-6"
-                  resizeMode="contain"
-                />
-              </View>
-              <View className="ml-3 flex-1">
-                <Text className="text-xs font-semibold text-gray-900">
-                  Ubuntu
-                </Text>
-                <View className="flex-row items-center mt-0.5">
-                  <CheckCircle2 size={12} color="#3B82F6" />
-                  <Text className="text-xs text-blue-500 ml-1">Verified</Text>
-                </View>
-              </View>
-            </View>
+              <ChevronRight size={18} color="#EF4444" />
+            </TouchableOpacity>
           </View>
         </View>
       </ScrollView>

@@ -3,7 +3,6 @@ import { Chrome, Eye, EyeOff, Lock, Mail } from "lucide-react-native";
 import { useState } from "react";
 import {
   ActivityIndicator,
-  Alert,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
@@ -13,6 +12,7 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import Toast from "react-native-toast-message";
 import { useLoginMutation } from "../redux/auth/auth.api";
 
 export default function SignInScreen() {
@@ -25,12 +25,22 @@ export default function SignInScreen() {
   const handleSignIn = async () => {
     // Validation
     if (!email || !password) {
-      Alert.alert("Error", "Please enter both email and password");
+      Toast.show({
+        type: "error",
+        text1: "Error",
+        text2: "Please enter both email and password",
+        position: "bottom",
+      });
       return;
     }
 
     if (!email.includes("@")) {
-      Alert.alert("Error", "Please enter a valid email address");
+      Toast.show({
+        type: "error",
+        text1: "Error",
+        text2: "Please enter a valid email address",
+        position: "bottom",
+      });
       return;
     }
 
@@ -42,7 +52,11 @@ export default function SignInScreen() {
 
       // Login successful
       console.log("Login successful:", result.data.user);
-      Alert.alert("Success", result.message || "Logged in successfully");
+      Toast.show({
+        type: "success",
+        text1: "Login Successful",
+        position: "bottom",
+      });
 
       // Navigate to main app
       router.replace("/(root)/(tabs)/chat");
@@ -50,7 +64,12 @@ export default function SignInScreen() {
       console.error("Login failed:", error);
       const errorMessage =
         error?.data?.message || "Login failed. Please try again.";
-      Alert.alert("Login Failed", errorMessage);
+      Toast.show({
+        type: "error",
+        text1: "Login Failed",
+        text2: errorMessage,
+        position: "bottom",
+      });
     }
   };
 
