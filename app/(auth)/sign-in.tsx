@@ -1,5 +1,5 @@
 import { router } from "expo-router";
-import { Eye, EyeOff, Lock, Mail } from "lucide-react-native";
+import { Chrome, Eye, EyeOff, Lock, Mail } from "lucide-react-native";
 import { useState } from "react";
 import {
   ActivityIndicator,
@@ -159,15 +159,12 @@ export default function SignInScreen() {
             </View>
 
             {/* Social Sign In */}
-            <View className="flex-row justify-center space-x-4 mb-8">
+            <View className="flex-row justify-center gap-4 space-x-4 mb-8">
               <TouchableOpacity className="w-14 h-14 bg-gray-50 rounded-full items-center justify-center border border-gray-200">
-                <Text className="text-2xl">G</Text>
+                <Chrome size={20} />
               </TouchableOpacity>
               <TouchableOpacity className="w-14 h-14 bg-gray-50 rounded-full items-center justify-center border border-gray-200">
                 <Text className="text-2xl">f</Text>
-              </TouchableOpacity>
-              <TouchableOpacity className="w-14 h-14 bg-gray-50 rounded-full items-center justify-center border border-gray-200">
-                <Text className="text-2xl">🍎</Text>
               </TouchableOpacity>
             </View>
 
