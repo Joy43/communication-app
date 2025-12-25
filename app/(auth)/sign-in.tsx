@@ -1,32 +1,63 @@
-import { router } from 'expo-router';
-import { useState } from 'react';
+import { router } from "expo-router";
+import { Eye, EyeOff, Lock, Mail } from "lucide-react-native";
+import { useState } from "react";
 import {
-  View,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  Image,
+  ActivityIndicator,
+  Alert,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
-} from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { Eye, EyeOff, Mail, Lock } from 'lucide-react-native';
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { useLoginMutation } from "../redux/auth/auth.api";
 
 export default function SignInScreen() {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
 
-  const handleSignIn = () => {
-    // Add your sign-in logic here
-    router.push('/(root)/(tabs)/chat');
+  const [loginUserWithEmail, { isLoading }] = useLoginMutation();
+
+  const handleSignIn = async () => {
+    // Validation
+    if (!email || !password) {
+      Alert.alert("Error", "Please enter both email and password");
+      return;
+    }
+
+    if (!email.includes("@")) {
+      Alert.alert("Error", "Please enter a valid email address");
+      return;
+    }
+
+    try {
+      const result = await loginUserWithEmail({
+        email: email.trim(),
+        password,
+      }).unwrap();
+
+      // Login successful
+      console.log("Login successful:", result.data.user);
+      Alert.alert("Success", result.message || "Logged in successfully");
+
+      // Navigate to main app
+      router.replace("/(root)/(tabs)/chat");
+    } catch (error: any) {
+      console.error("Login failed:", error);
+      const errorMessage =
+        error?.data?.message || "Login failed. Please try again.";
+      Alert.alert("Login Failed", errorMessage);
+    }
   };
 
   return (
     <SafeAreaView className="flex-1 bg-white">
       <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
         className="flex-1"
       >
         <ScrollView
@@ -39,7 +70,9 @@ export default function SignInScreen() {
               <View className="w-20 h-20 bg-blue-500 rounded-full items-center justify-center mb-4">
                 <Text className="text-white text-3xl font-bold">M</Text>
               </View>
-              <Text className="text-3xl font-bold text-gray-900">Welcome Back</Text>
+              <Text className="text-3xl font-bold text-gray-900">
+                Welcome Back
+              </Text>
               <Text className="text-gray-500 text-base mt-2">
                 Sign in to continue
               </Text>
@@ -59,6 +92,7 @@ export default function SignInScreen() {
                   placeholderTextColor="#9CA3AF"
                   keyboardType="email-address"
                   autoCapitalize="none"
+                  editable={!isLoading}
                   className="flex-1 ml-3 text-base text-gray-900"
                 />
               </View>
@@ -77,9 +111,12 @@ export default function SignInScreen() {
                   placeholder="Enter your password"
                   placeholderTextColor="#9CA3AF"
                   secureTextEntry={!showPassword}
+                  editable={!isLoading}
                   className="flex-1 ml-3 text-base text-gray-900"
                 />
-                <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
+                <TouchableOpacity
+                  onPress={() => setShowPassword(!showPassword)}
+                >
                   {showPassword ? (
                     <EyeOff size={20} color="#9CA3AF" />
                   ) : (
@@ -91,7 +128,7 @@ export default function SignInScreen() {
 
             {/* Forgot Password */}
             <TouchableOpacity
-              onPress={() => router.push('/forgot-password')}
+              onPress={() => router.push("/forgot-password")}
               className="self-end mb-6"
             >
               <Text className="text-blue-500 text-sm font-semibold">
@@ -102,9 +139,16 @@ export default function SignInScreen() {
             {/* Sign In Button */}
             <TouchableOpacity
               onPress={handleSignIn}
-              className="bg-blue-500 rounded-xl py-4 items-center mb-6"
+              disabled={isLoading}
+              className={`rounded-xl py-4 items-center mb-6 ${
+                isLoading ? "bg-blue-300" : "bg-blue-500"
+              }`}
             >
-              <Text className="text-white text-base font-bold">Sign In</Text>
+              {isLoading ? (
+                <ActivityIndicator color="white" />
+              ) : (
+                <Text className="text-white text-base font-bold">Sign In</Text>
+              )}
             </TouchableOpacity>
 
             {/* Divider */}
@@ -129,9 +173,13 @@ export default function SignInScreen() {
 
             {/* Sign Up Link */}
             <View className="flex-row justify-center">
-              <Text className="text-gray-600 text-sm">Don't have an account? </Text>
-              <TouchableOpacity onPress={() => router.push('/sign-up')}>
-                <Text className="text-blue-500 text-sm font-semibold">Sign Up</Text>
+              <Text className="text-gray-600 text-sm">
+                Don't have an account?{" "}
+              </Text>
+              <TouchableOpacity onPress={() => router.push("/sign-up")}>
+                <Text className="text-blue-500 text-sm font-semibold">
+                  Sign Up
+                </Text>
               </TouchableOpacity>
             </View>
           </View>

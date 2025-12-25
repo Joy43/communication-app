@@ -2,6 +2,9 @@
   "expo": {
     "name": "communication-app",
     "slug": "communication-app",
+     "extra": {
+      "BASE_URL":  "http://localhost:3000"
+    },
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
