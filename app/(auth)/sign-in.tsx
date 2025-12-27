@@ -14,12 +14,15 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import Toast from "react-native-toast-message";
 import { useLoginMutation } from "../redux/auth/auth.api";
+import { setUser } from "../redux/auth/auth.slice";
+import { useAppDispatch } from "../redux/hook";
 
 export default function SignInScreen() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
 
+  const dispatch = useAppDispatch();
   const [loginUserWithEmail, { isLoading }] = useLoginMutation();
 
   const handleSignIn = async () => {
@@ -52,6 +55,16 @@ export default function SignInScreen() {
 
       // Login successful
       console.log("Login successful:", result.data.user);
+      console.log("Access token:", result.data.token);
+
+      // Store user and token in Redux
+      dispatch(
+        setUser({
+          user: result.data.user,
+          accessToken: result.data.token.accessToken,
+        })
+      );
+
       Toast.show({
         type: "success",
         text1: "Login Successful",

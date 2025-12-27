@@ -1,4 +1,4 @@
-import { useRouter } from "expo-router";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import {
   ArrowLeft,
   Mic,
@@ -8,9 +8,8 @@ import {
   Send,
   Video,
 } from "lucide-react-native";
-import React, { useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
-  Image,
   KeyboardAvoidingView,
   Platform,
   SafeAreaView,
@@ -20,56 +19,112 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import { useSocket } from "../hooks/useSocket";
+import { selectUser } from "../redux/auth/auth.slice";
+import { useAppSelector } from "../redux/hook";
 
-const messages = [
-  {
-    id: 1,
-    text: "Hello, nice to meet you.",
-    time: "10:01 am",
-    sender: "other",
-  },
-  {
-    id: 2,
-    text: "Hey Jhon! Loved your from last night",
-    time: "10:03 am",
-    sender: "me",
-  },
-  {
-    id: 3,
-    text: "Aww. Thank you! Enjoyed it",
-    time: "10:03 am",
-    sender: "other",
-  },
-  {
-    id: 4,
-    text: "Do you stream every weekend?",
-    time: "10:05 am",
-    sender: "me",
-  },
-  {
-    id: 5,
-    text: "Yes! Saturday night are my usual",
-    time: "10:06 am",
-    sender: "other",
-  },
-  {
-    id: 6,
-    text: "Nice! Just tell me about your weekend plan",
-    time: "10:08 am",
-    sender: "me",
-  },
-  {
-    id: 7,
-    text: "Sure!",
-    time: "10:08 am",
-    sender: "other",
-    typing: true,
-  },
-];
+type Message = {
+  id: string;
+  content: string;
+  senderId: string;
+  createdAt: string;
+};
 
 export default function ChatDetailScreen() {
   const router = useRouter();
+  const params = useLocalSearchParams();
+  const scrollViewRef = useRef<ScrollView>(null);
+  const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  const { userId, userName, conversationId } = params;
+  const currentUser = useAppSelector(selectUser);
+  const currentUserId = currentUser?.id;
+
   const [message, setMessage] = useState("");
+
+  // Use socket hook for real-time functionality
+  const {
+    isConnected,
+    messages,
+    typingUsers,
+    onlineUsers,
+    sendMessage,
+    loadConversation,
+    markAsRead,
+    startTyping,
+    stopTyping,
+  } = useSocket();
+
+  const conversationMessages = messages[conversationId as string] || [];
+  const isRecipientOnline = onlineUsers[userId as string] || false;
+  const isRecipientTyping = (
+    typingUsers[conversationId as string] || []
+  ).includes(userId as string);
+
+  // Load conversation on mount
+  useEffect(() => {
+    if (conversationId) {
+      loadConversation(conversationId as string);
+    }
+  }, [conversationId]);
+
+  // Mark as read when viewing
+  useEffect(() => {
+    if (conversationId && conversationMessages.length > 0) {
+      markAsRead(conversationId as string);
+    }
+  }, [conversationId, conversationMessages.length]);
+
+  // Scroll to bottom when new messages arrive
+  useEffect(() => {
+    if (conversationMessages.length > 0) {
+      setTimeout(() => {
+        scrollViewRef.current?.scrollToEnd({ animated: true });
+      }, 100);
+    }
+  }, [conversationMessages.length]);
+
+  const handleSendMessage = () => {
+    if (!message.trim() || !userId) return;
+
+    sendMessage(userId as string, message.trim());
+    setMessage("");
+
+    // Stop typing indicator
+    if (conversationId) {
+      stopTyping(conversationId as string, userId as string);
+    }
+  };
+
+  const handleTyping = (text: string) => {
+    setMessage(text);
+
+    // Clear previous timeout
+    if (typingTimeoutRef.current) {
+      clearTimeout(typingTimeoutRef.current);
+    }
+
+    // Start typing
+    if (text.trim() && conversationId) {
+      startTyping(conversationId as string, userId as string);
+
+      // Stop typing after 3 seconds of inactivity
+      typingTimeoutRef.current = setTimeout(() => {
+        stopTyping(conversationId as string, userId as string);
+      }, 3000);
+    } else if (conversationId) {
+      stopTyping(conversationId as string, userId as string);
+    }
+  };
+
+  const formatTime = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleTimeString("en-US", {
+      hour: "numeric",
+      minute: "2-digit",
+      hour12: true,
+    });
+  };
 
   return (
     <SafeAreaView className="flex-1 py-10 bg-gray-50">
@@ -84,13 +139,25 @@ export default function ChatDetailScreen() {
               <TouchableOpacity onPress={() => router.back()}>
                 <ArrowLeft size={24} color="#000" />
               </TouchableOpacity>
-              <Image
-                source={{ uri: "https://i.pravatar.cc/150?img=5" }}
-                className="w-10 h-10 rounded-full mx-3"
-              />
+              <View className="w-10 h-10 rounded-full bg-blue-500 items-center justify-center mx-3">
+                <Text className="text-white text-lg font-semibold">
+                  {(userName as string)?.charAt(0).toUpperCase()}
+                </Text>
+              </View>
               <View>
-                <Text className="text-base font-semibold">Jhon Xaria</Text>
-                <Text className="text-xs text-gray-500">Online</Text>
+                <Text className="text-base font-semibold">{userName}</Text>
+                <View className="flex-row items-center">
+                  {isRecipientOnline && (
+                    <View className="w-2 h-2 bg-green-500 rounded-full mr-1" />
+                  )}
+                  <Text className="text-xs text-gray-500">
+                    {isRecipientTyping
+                      ? "Typing..."
+                      : isRecipientOnline
+                        ? "Online"
+                        : "Offline"}
+                  </Text>
+                </View>
               </View>
             </View>
             <View className="flex-row items-center">
@@ -108,50 +175,86 @@ export default function ChatDetailScreen() {
         </View>
 
         {/* Messages */}
-        <ScrollView className="flex-1 px-4 py-4">
-          {/* Welcome Button */}
-          <View className="items-center mb-4">
-            <TouchableOpacity className="bg-blue-500 px-6 py-2 rounded-full">
-              <Text className="text-white font-medium">Nice to meet you!</Text>
-            </TouchableOpacity>
-            <Text className="text-xs text-gray-400 mt-1">10:00 am</Text>
-          </View>
-
-          {messages.map((msg) => (
-            <View
-              key={msg.id}
-              className={`mb-3 ${
-                msg.sender === "me" ? "items-end" : "items-start"
-              }`}
-            >
-              <View
-                className={`max-w-[75%] px-4 py-3 rounded-2xl ${
-                  msg.sender === "me"
-                    ? "bg-blue-500 rounded-tr-sm"
-                    : "bg-white rounded-tl-sm"
-                }`}
-              >
-                <Text
-                  className={`text-sm ${
-                    msg.sender === "me" ? "text-white" : "text-gray-900"
-                  }`}
-                >
-                  {msg.text}
-                </Text>
-              </View>
-              <View className="flex-row items-center mt-1">
-                <Text className="text-xs text-gray-400">{msg.time}</Text>
-                {msg.sender === "me" && (
-                  <Text className="text-xs text-blue-500 ml-1">✓✓</Text>
-                )}
-              </View>
-              {msg.typing && (
-                <View className="bg-gray-200 px-4 py-2 rounded-full mt-2">
-                  <Text className="text-gray-500">• • •</Text>
-                </View>
-              )}
+        <ScrollView
+          ref={scrollViewRef}
+          className="flex-1 px-4 py-4"
+          onContentSizeChange={() =>
+            scrollViewRef.current?.scrollToEnd({ animated: true })
+          }
+        >
+          {!isConnected && (
+            <View className="items-center py-4">
+              <Text className="text-gray-400 text-sm">Connecting...</Text>
             </View>
-          ))}
+          )}
+
+          {conversationMessages.length === 0 && isConnected && (
+            <View className="items-center py-10">
+              <Text className="text-gray-400 text-base">No messages yet</Text>
+              <Text className="text-gray-400 text-sm mt-1">
+                Start the conversation!
+              </Text>
+            </View>
+          )}
+
+          {conversationMessages.map((msg: Message, index: number) => {
+            const isMe = msg.senderId === currentUserId;
+            const showDate =
+              index === 0 ||
+              new Date(msg.createdAt).toDateString() !==
+                new Date(
+                  conversationMessages[index - 1].createdAt
+                ).toDateString();
+
+            return (
+              <View key={msg.id}>
+                {showDate && (
+                  <View className="items-center my-4">
+                    <Text className="text-xs text-gray-400 bg-gray-100 px-3 py-1 rounded-full">
+                      {new Date(msg.createdAt).toDateString() ===
+                      new Date().toDateString()
+                        ? "Today"
+                        : new Date(msg.createdAt).toLocaleDateString()}
+                    </Text>
+                  </View>
+                )}
+
+                <View className={`mb-3 ${isMe ? "items-end" : "items-start"}`}>
+                  <View
+                    className={`max-w-[75%] px-4 py-3 rounded-2xl ${
+                      isMe
+                        ? "bg-blue-500 rounded-tr-sm"
+                        : "bg-white rounded-tl-sm"
+                    }`}
+                  >
+                    <Text
+                      className={`text-sm ${
+                        isMe ? "text-white" : "text-gray-900"
+                      }`}
+                    >
+                      {msg.content}
+                    </Text>
+                  </View>
+                  <View className="flex-row items-center mt-1">
+                    <Text className="text-xs text-gray-400">
+                      {formatTime(msg.createdAt)}
+                    </Text>
+                    {isMe && (
+                      <Text className="text-xs text-blue-500 ml-1">✓✓</Text>
+                    )}
+                  </View>
+                </View>
+              </View>
+            );
+          })}
+
+          {isRecipientTyping && (
+            <View className="items-start mb-3">
+              <View className="bg-gray-200 px-4 py-3 rounded-2xl rounded-tl-sm">
+                <Text className="text-gray-500 text-base">• • •</Text>
+              </View>
+            </View>
+          )}
         </ScrollView>
 
         {/* Input Bar */}
@@ -163,16 +266,24 @@ export default function ChatDetailScreen() {
             <View className="flex-1 bg-gray-100 rounded-full px-4 py-2.5">
               <TextInput
                 value={message}
-                onChangeText={setMessage}
-                placeholder="write your message"
+                onChangeText={handleTyping}
+                placeholder="Write your message"
                 placeholderTextColor="#999"
                 className="text-sm"
+                multiline
+                maxLength={1000}
               />
             </View>
             <TouchableOpacity className="ml-3">
               <Mic size={24} color="#666" />
             </TouchableOpacity>
-            <TouchableOpacity className="ml-3 bg-blue-500 w-10 h-10 rounded-full items-center justify-center">
+            <TouchableOpacity
+              className={`ml-3 w-10 h-10 rounded-full items-center justify-center ${
+                message.trim() ? "bg-blue-500" : "bg-gray-300"
+              }`}
+              onPress={handleSendMessage}
+              disabled={!message.trim() || !isConnected}
+            >
               <Send size={18} color="#fff" />
             </TouchableOpacity>
           </View>

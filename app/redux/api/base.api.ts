@@ -3,7 +3,9 @@ import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 import { RootState } from "../store";
 
 // Get the base URL with fallbacks
-const apiUrl = process.env.EXPO_PUBLIC_BASE_API || "http://localhost:3000";
+const apiUrl =
+  process.env.EXPO_PUBLIC_BASE_API || "https://a103c7d01944.ngrok-free.app";
+console.log("API Base URL:", apiUrl);
 if (!apiUrl) {
   console.error("VITE_API_URL is not set! Check your .env file.");
 }
@@ -13,8 +15,12 @@ const baseQueryAPI = fetchBaseQuery({
   credentials: "include",
   prepareHeaders(headers, { getState }) {
     const accessToken = (getState() as RootState).auth.accessToken;
+    console.log("Access Token in prepareHeaders:", accessToken);
     if (accessToken) {
       headers.set("authorization", `Bearer ${accessToken}`);
+      console.log("Authorization header set:", `Bearer ${accessToken}`);
+    } else {
+      console.warn("No access token found in auth state");
     }
     return headers;
   },
@@ -25,6 +31,8 @@ export const baseAPI = createApi({
   baseQuery: baseQueryAPI,
   tagTypes: [
     "user",
+    "message",
+    "call",
     "content",
     "privacy-policy",
     "terms",
