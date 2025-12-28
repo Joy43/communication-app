@@ -2,8 +2,8 @@
   "expo": {
     "name": "communication-app",
     "slug": "communication-app",
-     "extra": {
-      "BASE_URL":  "http://localhost:3000"
+    "extra": {
+      "BASE_URL": "http://localhost:3000"
     },
     "version": "1.0.0",
     "orientation": "portrait",
@@ -13,9 +13,21 @@
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.anonymous.communicationapp"
+      "bundleIdentifier": "com.anonymous.communicationapp",
+      "infoPlist": {
+        "NSCameraUsageDescription": "Camera access is required for video calls",
+        "NSMicrophoneUsageDescription": "Microphone access is required for voice calls"
+      }
     },
     "android": {
+      "package": "com.anonymous.communicationapp",
+      "permissions": [
+        "CAMERA",
+        "RECORD_AUDIO",
+        "MODIFY_AUDIO_SETTINGS",
+        "INTERNET",
+        "ACCESS_NETWORK_STATE"
+      ],
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
         "foregroundImage": "./assets/images/android-icon-foreground.png",
@@ -23,8 +35,7 @@
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
       "edgeToEdgeEnabled": true,
-      "predictiveBackGestureEnabled": false,
-      "package": "com.anonymous.communicationapp"
+      "predictiveBackGestureEnabled": false
     },
     "web": {
       "bundler": "metro",

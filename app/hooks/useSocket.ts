@@ -57,7 +57,8 @@ export const useSocket = () => {
     if (!token) return;
 
     // Initialize socket connection
-    const socket = io("https://a103c7d01944.ngrok-free.app/message", {
+    // base url from .env
+    const socket = io("https://6adfead6e53f.ngrok-free.app/message", {
       auth: { token },
       transports: ["websocket"],
     });
@@ -189,7 +190,7 @@ export const useSocket = () => {
         [data.conversationId]: [
           ...(prev[data.conversationId] || []),
           data.userId,
-        ].filter((v, i, a) => a.indexOf(v) === i), // unique
+        ].filter((v, i, a) => a.indexOf(v) === i),
       }));
     });
 
@@ -280,6 +281,7 @@ export const useSocket = () => {
   };
 
   return {
+    socket: socketRef.current,
     isConnected,
     conversations,
     messages,

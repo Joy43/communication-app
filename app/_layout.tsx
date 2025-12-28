@@ -8,6 +8,7 @@ import { StatusBar } from "expo-status-bar";
 import { Platform } from "react-native";
 import "./global.css";
 import { persistor, store } from "./redux/store";
+import { IncomingCallModal } from "./components/IncomingCallModal";
 // import Providers from '@/providers/Providers';
 
 export default function RootLayout() {
@@ -56,16 +57,17 @@ export default function RootLayout() {
                 name="(productdetials)"
                 options={{ headerShown: false }}
               />
-              <Stack.Screen name="(product)" options={{ headerShown: false }} />
+              {/* <Stack.Screen name="(product)" options={{ headerShown: false }} />
               <Stack.Screen name="(order)" options={{ headerShown: false }} />
               <Stack.Screen name="(login)" options={{ headerShown: false }} />
-              <Stack.Screen name="(cart)" options={{ headerShown: false }} />
+              <Stack.Screen name="(cart)" options={{ headerShown: false }} /> */}
 
               <Stack.Screen
                 name="(settings)"
                 options={{ headerShown: false }}
               />
               <Stack.Screen name="+not-found" />
+               <IncomingCallModal />
             </Stack>
 
             <Toast />
