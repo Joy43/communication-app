@@ -58,7 +58,7 @@ export const useSocket = () => {
 
     // Initialize socket connection
     // base url from .env
-    const socket = io("https://6adfead6e53f.ngrok-free.app/message", {
+    const socket = io(`${process.env.EXPO_PUBLIC_BASE_API}/message`, {
       auth: { token },
       transports: ["websocket"],
     });

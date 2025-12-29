@@ -24,7 +24,6 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import { IncomingCallModal } from "../components/IncomingCallModal";
 import { useSocket } from "../hooks/useSocket";
 import { useWebRTC } from "../hooks/useWebRTC";
 import { selectUser } from "../redux/auth/auth.slice";
@@ -210,13 +209,15 @@ export default function ChatDetailScreen() {
       console.log("Initiating voice call...");
       await initiateCall(conversationId as string, "AUDIO");
 
-      // Check if call-screen route exists, otherwise handle inline
-      try {
-        router.push("/call-screen" as any);
-      } catch (navError) {
-        console.log("Call screen route not found, handling call inline");
-        Alert.alert("Call Started", "Voice call initiated");
-      }
+      // Navigate to call screen with receiver info
+      router.push({
+        pathname: "/call-screen",
+        params: {
+          userName: userName,
+          userId: userId,
+          conversationId: conversationId,
+        },
+      });
     } catch (error) {
       console.error("Voice call error:", error);
       Alert.alert("Call Failed", "Could not initiate call. Please try again.");
@@ -246,13 +247,15 @@ export default function ChatDetailScreen() {
       console.log("Initiating video call...");
       await initiateCall(conversationId as string, "VIDEO");
 
-      // Check if call-screen route exists, otherwise handle inline
-      try {
-        router.push("/call-screen");
-      } catch (navError) {
-        console.log("Call screen route not found, handling call inline");
-        Alert.alert("Call Started", "Video call initiated");
-      }
+      // Navigate to call screen with receiver info
+      router.push({
+        pathname: "/call-screen",
+        params: {
+          userName: userName,
+          userId: userId,
+          conversationId: conversationId,
+        },
+      });
     } catch (error) {
       console.error("Video call error:", error);
       Alert.alert("Call Failed", "Could not initiate call. Please try again.");
@@ -501,8 +504,9 @@ export default function ChatDetailScreen() {
         </KeyboardAvoidingView>
       </SafeAreaView>
 
-      {/* Incoming Call Modal */}
-      <IncomingCallModal />
+      {/* Remove this - it's now in _layout.tsx */}
+      {/* <IncomingCallModal /> */}
     </>
   );
 }
+

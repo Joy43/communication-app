@@ -9,13 +9,11 @@ import { Platform } from "react-native";
 import "./global.css";
 import { persistor, store } from "./redux/store";
 import { IncomingCallModal } from "./components/IncomingCallModal";
-// import Providers from '@/providers/Providers';
 
 export default function RootLayout() {
   const appColor = "#10B981";
 
   return (
-    // <Providers>
     <Provider store={store}>
       <PersistGate
         loading={
@@ -39,10 +37,8 @@ export default function RootLayout() {
           }}
           className="bg-white"
         >
-          {/* StatusBar from Expo handles both platforms perfectly */}
           <StatusBar style="light" backgroundColor={appColor} animated />
 
-          {/* Wrapper view ensures Android fills background below SafeArea */}
           <View style={{ flex: 1, backgroundColor: appColor }}>
             <Stack>
               <Stack.Screen name="index" options={{ headerShown: false }} />
@@ -53,28 +49,16 @@ export default function RootLayout() {
                 name="(chat-detail)"
                 options={{ headerShown: false }}
               />
-              <Stack.Screen
-                name="(productdetials)"
-                options={{ headerShown: false }}
-              />
-              {/* <Stack.Screen name="(product)" options={{ headerShown: false }} />
-              <Stack.Screen name="(order)" options={{ headerShown: false }} />
-              <Stack.Screen name="(login)" options={{ headerShown: false }} />
-              <Stack.Screen name="(cart)" options={{ headerShown: false }} /> */}
-
-              <Stack.Screen
-                name="(settings)"
-                options={{ headerShown: false }}
-              />
-              <Stack.Screen name="+not-found" />
-               <IncomingCallModal />
             </Stack>
 
             <Toast />
           </View>
+
+          {/* Global Incoming Call Modal - renders on top of all screens */}
+          <IncomingCallModal />
         </SafeAreaView>
       </PersistGate>
     </Provider>
-    // </Providers>
   );
 }
+ 

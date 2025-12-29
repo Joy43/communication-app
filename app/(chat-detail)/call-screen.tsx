@@ -1,33 +1,34 @@
-
-import React, { useEffect } from 'react';
+import { useWebRTC } from "@/app/hooks/useWebRTC";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import {
-  SafeAreaView,
-  View,
-  Text,
-  TouchableOpacity,
-  StyleSheet,
-  Dimensions,
-} from 'react-native';
-import { RTCView } from 'react-native-webrtc';
-import {
-  Phone,
-  PhoneOff,
   Mic,
   MicOff,
+  PhoneOff,
+  SwitchCamera,
   Video,
   VideoOff,
-  SwitchCamera,
-} from 'lucide-react-native';
-// import { useWebRTC } from '../hooks/useWebRTC';
-import { useRouter } from 'expo-router';
-import { useWebRTC } from '@/app/hooks/useWebRTC';
+} from "lucide-react-native";
+import React, { useEffect, useState } from "react";
+import {
+  Dimensions,
+  Platform,
+  SafeAreaView,
+  StatusBar,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
+import { RTCView } from "react-native-webrtc";
 
-const { width, height } = Dimensions.get('window');
+const { width, height } = Dimensions.get("window");
 
 export default function CallScreen() {
   const router = useRouter();
+  const params = useLocalSearchParams();
+
   const {
     callState,
+    callType,
     localStream,
     remoteStream,
     isMuted,
@@ -37,228 +38,238 @@ export default function CallScreen() {
     toggleVideo,
     switchCamera,
     isConnected,
+    callInfo,
+    enableVideo,
   } = useWebRTC();
+
+  // Get receiver info from params or callInfo
+  const [receiverName, setReceiverName] = useState<string>("User");
+  const [receiverAvatar, setReceiverAvatar] = useState<string>("U");
+  const [callDuration, setCallDuration] = useState<string>("");
+
+  // Determine if video call - check multiple sources
+  const isVideoCall =
+    callType === "VIDEO" || (localStream?.getVideoTracks().length ?? 0) > 0;
+
+  const handleVideoToggle = async () => {
+    if (callType === "AUDIO" && !isVideoCall) {
+      // Upgrade audio call to video call
+      console.log("Upgrading to video call...");
+      await enableVideo();
+    } else {
+      // Toggle video on/off for existing video call
+      toggleVideo();
+    }
+  };
+
+  useEffect(() => {
+    console.log("Call Screen - callType:", callType);
+    console.log("Call Screen - localStream:", localStream ? "exists" : "null");
+    console.log("Call Screen - isVideoCall:", isVideoCall);
+  }, [callType, localStream, isVideoCall]);
+
+  useEffect(() => {
+    // Try to get receiver info from params first
+    if (params.userName) {
+      setReceiverName(params.userName as string);
+      setReceiverAvatar((params.userName as string).charAt(0).toUpperCase());
+    }
+    // Then try from callInfo
+    else if (callInfo?.participantName) {
+      setReceiverName(callInfo.participantName);
+      setReceiverAvatar(callInfo.participantName.charAt(0).toUpperCase());
+    }
+    // Fallback to callInfo data
+    else if (callInfo?.conversationId) {
+      setReceiverName("User");
+      setReceiverAvatar("U");
+    }
+  }, [params, callInfo]);
+
+  // Update call duration every second when connected
+  useEffect(() => {
+    let interval: number;
+
+    if (callState === "connected" && callInfo?.startTime) {
+      interval = setInterval(() => {
+        const startTime = callInfo.startTime;
+        if (startTime) {
+          const duration = Math.floor((Date.now() - startTime) / 1000);
+          const minutes = Math.floor(duration / 60);
+          const seconds = duration % 60;
+          setCallDuration(
+            `${minutes.toString().padStart(2, "0")}:${seconds
+              .toString()
+              .padStart(2, "0")}`
+          );
+        }
+      }, 1000) as number;
+    }
+
+    return () => {
+      if (interval) clearInterval(interval);
+    };
+  }, [callState, callInfo?.startTime]);
 
   useEffect(() => {
     // If call ends, go back
-    if (callState === 'ended') {
-      router.back();
+    if (callState === "ended") {
+      setTimeout(() => {
+        router.back();
+      }, 500);
     }
   }, [callState]);
 
   const handleEndCall = () => {
     endCall();
-    router.back();
+    setTimeout(() => {
+      router.back();
+    }, 300);
   };
 
   const getCallStateText = () => {
     switch (callState) {
-      case 'initiating':
-        return 'Initiating...';
-      case 'ringing':
-        return 'Ringing...';
-      case 'connecting':
-        return 'Connecting...';
-      case 'connected':
-        return 'Connected';
+      case "initiating":
+        return "Initiating...";
+      case "ringing":
+        return "Ringing...";
+      case "connecting":
+        return "Connecting...";
+      case "connected":
+        return "Connected";
+      case "ended":
+        return "Call Ended";
       default:
-        return '';
+        return "";
     }
   };
 
+  const getCallDuration = () => {
+    return callDuration || getCallStateText();
+  };
+
   return (
-    <SafeAreaView style={styles.container}>
-      {/* Remote Video (Full Screen) */}
-      {remoteStream && isConnected ? (
-        <RTCView
-          streamURL={remoteStream.toURL()}
-          style={styles.remoteVideo}
-          objectFit="cover"
-        />
-      ) : (
-        <View style={styles.placeholderVideo}>
-          <View style={styles.avatarLarge}>
-            <Text style={styles.avatarText}>U</Text>
-          </View>
-          <Text style={styles.callingText}>{getCallStateText()}</Text>
-        </View>
-      )}
-
-      {/* Local Video (Picture in Picture) */}
-      {localStream && !isVideoOff && (
-        <View style={styles.localVideoContainer}>
+    <>
+      <StatusBar barStyle="light-content" backgroundColor="#1a1a1a" />
+      <SafeAreaView className="flex-1 bg-[#1a1a1a]">
+        {/* Remote Video (Full Screen) */}
+        {remoteStream && isConnected && isVideoCall ? (
           <RTCView
-            streamURL={localStream.toURL()}
-            style={styles.localVideo}
+            streamURL={remoteStream.toURL()}
+            style={{ width, height }}
             objectFit="cover"
-            mirror={true}
+            className="bg-black"
           />
-        </View>
-      )}
-
-      {/* Controls */}
-      <View style={styles.controlsContainer}>
-        <View style={styles.controls}>
-          {/* Mute Button */}
-          <TouchableOpacity
-            style={[styles.controlButton, isMuted && styles.controlButtonActive]}
-            onPress={toggleMute}
+        ) : (
+          <View
+            style={{ width, height }}
+            className="bg-[#2a2a2a] justify-center items-center"
           >
-            {isMuted ? (
-              <MicOff size={28} color="#fff" />
-            ) : (
-              <Mic size={28} color="#fff" />
-            )}
-          </TouchableOpacity>
-
-          {/* End Call Button */}
-          <TouchableOpacity
-            style={styles.endCallButton}
-            onPress={handleEndCall}
-          >
-            <PhoneOff size={32} color="#fff" />
-          </TouchableOpacity>
-
-          {/* Video Toggle Button */}
-          <TouchableOpacity
-            style={[styles.controlButton, isVideoOff && styles.controlButtonActive]}
-            onPress={toggleVideo}
-          >
-            {isVideoOff ? (
-              <VideoOff size={28} color="#fff" />
-            ) : (
-              <Video size={28} color="#fff" />
-            )}
-          </TouchableOpacity>
-        </View>
-
-        {/* Switch Camera Button (only for video calls) */}
-        {localStream && !isVideoOff && (
-          <TouchableOpacity
-            style={styles.switchCameraButton}
-            onPress={switchCamera}
-          >
-            <SwitchCamera size={24} color="#fff" />
-          </TouchableOpacity>
+            <View className="w-30 h-30 rounded-full bg-blue-500 justify-center items-center mb-5">
+              <Text className="text-white text-5xl font-semibold">
+                {receiverAvatar}
+              </Text>
+            </View>
+            <Text className="text-white text-3xl font-semibold mb-2">
+              {receiverName}
+            </Text>
+            <Text className="text-white/70 text-lg">{getCallStateText()}</Text>
+          </View>
         )}
-      </View>
 
-      {/* Call Info Overlay */}
-      <View style={styles.topOverlay}>
-        <Text style={styles.userName}>John Doe</Text>
-        <Text style={styles.callStatus}>{getCallStateText()}</Text>
-      </View>
-    </SafeAreaView>
+        {/* Local Video (Picture in Picture) */}
+        {localStream && isVideoCall && !isVideoOff && (
+          <View className="absolute top-[60px] right-5 w-[120px] h-[160px] rounded-xl overflow-hidden border-2 border-white">
+            <RTCView
+              streamURL={localStream.toURL()}
+              style={{ width: "100%", height: "100%" }}
+              objectFit="cover"
+              mirror={true}
+            />
+          </View>
+        )}
+
+        {/* Call Info Overlay */}
+        <View
+          className="absolute left-0 right-0 items-center"
+          style={{
+            top:
+              Platform.OS === "android"
+                ? (StatusBar.currentHeight || 0) + 20
+                : 60,
+          }}
+        >
+          <Text className="text-white text-2xl font-semibold mb-1">
+            {receiverName}
+          </Text>
+          <Text className="text-white/80 text-base">
+            {callState === "connected" ? getCallDuration() : getCallStateText()}
+          </Text>
+          {isVideoCall && (
+            <View className="flex-row items-center bg-blue-500/30 px-3 py-1 rounded-xl mt-2">
+              <Video size={14} color="#fff" />
+              <Text className="text-white text-xs font-medium ml-1">
+                Video Call
+              </Text>
+            </View>
+          )}
+        </View>
+
+        {/* Controls */}
+        <View className="absolute bottom-12 left-0 right-0 items-center">
+          {/* Switch Camera Button (only for video calls) */}
+          {localStream && isVideoCall && !isVideoOff && (
+            <TouchableOpacity
+              className="absolute -top-20 w-12 h-12 rounded-full bg-white/20 justify-center items-center"
+              onPress={switchCamera}
+              activeOpacity={0.8}
+            >
+              <SwitchCamera size={24} color="#fff" />
+            </TouchableOpacity>
+          )}
+
+          <View className="flex-row justify-center items-center gap-5">
+            {/* Mute Button */}
+            <TouchableOpacity
+              className={`w-15 h-15 rounded-full justify-center items-center ${
+                isMuted ? "bg-red-500/80" : "bg-white/20"
+              }`}
+              onPress={toggleMute}
+              activeOpacity={0.8}
+            >
+              {isMuted ? (
+                <MicOff size={28} color="#fff" />
+              ) : (
+                <Mic size={28} color="#fff" />
+              )}
+            </TouchableOpacity>
+
+            {/* End Call Button */}
+            <TouchableOpacity
+              className="w-[70px] h-[70px] rounded-full bg-red-500 justify-center items-center"
+              onPress={handleEndCall}
+              activeOpacity={0.8}
+            >
+              <PhoneOff size={32} color="#fff" />
+            </TouchableOpacity>
+
+            {/* Video Toggle Button */}
+            <TouchableOpacity
+              className={`w-15 h-15 rounded-full justify-center items-center ${
+                isVideoOff ? "bg-red-500/80" : "bg-white/20"
+              }`}
+              onPress={handleVideoToggle}
+              activeOpacity={0.8}
+            >
+              {isVideoOff ? (
+                <VideoOff size={28} color="#fff" />
+              ) : (
+                <Video size={28} color="#fff" />
+              )}
+            </TouchableOpacity>
+          </View>
+        </View>
+      </SafeAreaView>
+    </>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#1a1a1a',
-  },
-  remoteVideo: {
-    width: width,
-    height: height,
-    backgroundColor: '#000',
-  },
-  placeholderVideo: {
-    width: width,
-    height: height,
-    backgroundColor: '#2a2a2a',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  avatarLarge: {
-    width: 120,
-    height: 120,
-    borderRadius: 60,
-    backgroundColor: '#3B82F6',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 20,
-  },
-  avatarText: {
-    fontSize: 48,
-    color: '#fff',
-    fontWeight: '600',
-  },
-  callingText: {
-    fontSize: 24,
-    color: '#fff',
-    fontWeight: '500',
-  },
-  localVideoContainer: {
-    position: 'absolute',
-    top: 60,
-    right: 20,
-    width: 120,
-    height: 160,
-    borderRadius: 12,
-    overflow: 'hidden',
-    borderWidth: 2,
-    borderColor: '#fff',
-  },
-  localVideo: {
-    width: '100%',
-    height: '100%',
-  },
-  controlsContainer: {
-    position: 'absolute',
-    bottom: 50,
-    left: 0,
-    right: 0,
-    alignItems: 'center',
-  },
-  controls: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-    gap: 20,
-  },
-  controlButton: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  controlButtonActive: {
-    backgroundColor: 'rgba(239, 68, 68, 0.8)',
-  },
-  endCallButton: {
-    width: 70,
-    height: 70,
-    borderRadius: 35,
-    backgroundColor: '#EF4444',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  switchCameraButton: {
-    marginTop: 20,
-    width: 50,
-    height: 50,
-    borderRadius: 25,
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  topOverlay: {
-    position: 'absolute',
-    top: 60,
-    left: 0,
-    right: 0,
-    alignItems: 'center',
-  },
-  userName: {
-    fontSize: 24,
-    fontWeight: '600',
-    color: '#fff',
-    marginBottom: 5,
-  },
-  callStatus: {
-    fontSize: 16,
-    color: 'rgba(255, 255, 255, 0.8)',
-  },
-});
