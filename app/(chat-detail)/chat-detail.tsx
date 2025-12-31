@@ -274,17 +274,17 @@ export default function ChatDetailScreen() {
   return (
     <>
       <StatusBar barStyle="dark-content" backgroundColor="#fff" />
-      <SafeAreaView
-        className="flex-1 bg-gray-50"
-        style={{
-          paddingTop: Platform.OS === "android" ? StatusBar.currentHeight : 0,
-        }}
+      <KeyboardAvoidingView
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        className="flex-1"
+        keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 0}
+        style={{ flex: 1 }}
       >
-        <KeyboardAvoidingView
-          behavior={Platform.OS === "ios" ? "padding" : undefined}
-          className="flex-1"
-          keyboardVerticalOffset={Platform.OS === "ios" ? 90 : 0}
-          enabled
+        <SafeAreaView
+          className="flex-1 bg-gray-50"
+          style={{
+            paddingTop: Platform.OS === "android" ? StatusBar.currentHeight : 0,
+          }}
         >
           {/* Header */}
           <View className="bg-white px-4 py-3 border-b border-gray-100">
@@ -501,12 +501,11 @@ export default function ChatDetailScreen() {
               )}
             </View>
           </View>
-        </KeyboardAvoidingView>
-      </SafeAreaView>
+        </SafeAreaView>
+      </KeyboardAvoidingView>
 
       {/* Remove this - it's now in _layout.tsx */}
       {/* <IncomingCallModal /> */}
     </>
   );
 }
-

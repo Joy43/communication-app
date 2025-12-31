@@ -1,10 +1,14 @@
 import { useEffect, useRef, useState } from "react";
 import { MediaStream } from "react-native-webrtc";
+import { selectUser } from "../redux/auth/auth.slice";
+import { useAppSelector } from "../redux/hook";
 import { CallState, CallType, WebRTCManager } from "../services/webRTCManager";
-import { useSocket } from "./useSocket";
+import { useCallSocket } from "./useCallSocket";
 
 export const useWebRTC = () => {
-  const { socket } = useSocket();
+  const currentUser = useAppSelector(selectUser);
+  const currentUserId = currentUser?.id;
+
   const webRTCManagerRef = useRef<WebRTCManager | null>(null);
 
   const [callState, setCallState] = useState<CallState>("idle");
@@ -18,22 +22,91 @@ export const useWebRTC = () => {
     callerId: string;
     callerName: string;
     type: CallType;
+    title?: string;
   } | null>(null);
   const [callInfo, setCallInfo] = useState<{
-    conversationId: string;
-    participantName?: string;
-    participantId?: string;
+    callId?: string;
+    recipientId?: string;
+    recipientName?: string;
     startTime?: number;
   } | null>(null);
   const [callType, setCallType] = useState<CallType | null>(null);
 
-  useEffect(() => {
-    if (!socket) return;
+  const callSocket = useCallSocket({
+    onIncomingCall: (data) => {
+      console.log("Incoming call received:", data);
+      setIncomingCall({
+        callId: data.callId,
+        callerId: data.from,
+        callerName: data.title || "Unknown User",
+        type: "AUDIO",
+        title: data.title,
+      });
+      if (webRTCManagerRef.current && currentUserId) {
+        webRTCManagerRef.current
+          .prepareForIncomingCall(data.callId, data.from, "AUDIO")
+          .catch((err) => {
+            console.error("Error preparing for incoming call:", err);
+            setError(err);
+          });
+      }
+    },
+    onCallStarted: (data) => {
+      console.log("Call started:", data);
+      setCallInfo({
+        callId: data.callId,
+        recipientId: data.to,
+        startTime: Date.now(),
+      });
+    },
+    onCallActive: (data) => {
+      console.log("Call active:", data);
+    },
+    onCallDeclined: (data) => {
+      console.log("Call declined:", data);
+      setCallState("ended");
+      setError(new Error("Call was declined"));
+      setIncomingCall(null);
+      webRTCManagerRef.current?.endCall();
+    },
+    onCallEnded: (data) => {
+      console.log("Call ended:", data);
+      setCallState("ended");
+      setIncomingCall(null);
+      setCallInfo(null);
+      webRTCManagerRef.current?.endCall();
+    },
+    onWebRTCOffer: (data) => {
+      console.log("WebRTC offer received:", data.roomId);
+      webRTCManagerRef.current?.handleWebRTCOffer(data).catch((err) => {
+        console.error("Error handling WebRTC offer:", err);
+        setError(err);
+      });
+    },
+    onWebRTCAnswer: (data) => {
+      console.log("WebRTC answer received:", data.roomId);
+      webRTCManagerRef.current?.handleWebRTCAnswer(data).catch((err) => {
+        console.error("Error handling WebRTC answer:", err);
+        setError(err);
+      });
+    },
+    onIceCandidate: (data) => {
+      webRTCManagerRef.current?.handleIceCandidate(data).catch((err) => {
+        console.error("Error handling ICE candidate:", err);
+      });
+    },
+  });
 
-    // Initialize WebRTC Manager
+  useEffect(() => {
+    if (!currentUserId) {
+      console.warn("No current user ID available");
+      return;
+    }
+    console.log("Initializing WebRTC Manager for user:", currentUserId);
     webRTCManagerRef.current = new WebRTCManager({
-      socket,
+      currentUserId,
       onStateChange: (state) => {
+        console.log("WebRTC state changed:", state);
         setCallState(state);
         if (state === "ended") {
           setLocalStream(null);
@@ -41,81 +114,137 @@ export const useWebRTC = () => {
           setIncomingCall(null);
           setIsMuted(false);
           setIsVideoOff(false);
+          setCallInfo(null);
         }
       },
       onRemoteStream: (stream) => {
+        console.log("Remote stream received");
         setRemoteStream(stream);
       },
       onLocalStream: (stream) => {
+        console.log("Local stream ready");
         setLocalStream(stream);
       },
       onError: (err) => {
+        console.error("WebRTC error:", err);
         setError(err);
       },
+      onSendOffer: (data) => {
+        console.log("Sending WebRTC offer via socket");
+        callSocket.sendWebRTCOffer(data);
+      },
+      onSendAnswer: (data) => {
+        console.log("Sending WebRTC answer via socket");
+        callSocket.sendWebRTCAnswer(data);
+      },
+      onSendIceCandidate: (data) => {
+        callSocket.sendIceCandidate(data);
+      },
     });
-
-    // Listen for incoming calls
-    socket.on(
-      "call:incoming",
-      (data: {
-        callId: string;
-        callerId: string;
-        type: CallType;
-        conversationId: string;
-      }) => {
-        // You would need to fetch caller info here
-        setIncomingCall({
-          callId: data.callId,
-          callerId: data.callerId,
-          callerName: "Unknown",
-          type: data.type,
-        });
-      }
-    );
-
     return () => {
+      console.log("Cleaning up WebRTC Manager");
       webRTCManagerRef.current?.destroy();
-      socket.off("call:incoming");
     };
-  }, [socket]);
+  }, [currentUserId]);
 
-  const initiateCall = async (conversationId: string, type: CallType) => {
+  const initiateCall = async (
+    recipientUserId: string,
+    type: CallType,
+    title?: string
+  ) => {
     try {
+      if (!currentUserId) {
+        throw new Error("Not authenticated");
+      }
+      if (!callSocket.isConnected) {
+        throw new Error("Socket not connected");
+      }
+      console.log("Initiating call to:", recipientUserId);
       setCallType(type);
       setError(null);
-      const callId = await webRTCManagerRef.current?.initiateCall(
-        conversationId,
-        type
-      );
-
-      // Set call info
-      setCallInfo({
-        conversationId,
-        startTime: Date.now(),
+      callSocket.startCall({
+        hostUserId: currentUserId,
+        recipientUserId,
+        title,
       });
-
-      return callId;
+      setTimeout(async () => {
+        if (callInfo?.callId) {
+          await webRTCManagerRef.current?.initiateCall(
+            callInfo.callId,
+            recipientUserId,
+            type
+          );
+        } else {
+          console.error("Call ID not received from backend");
+          setError(new Error("Failed to start call"));
+        }
+      }, 1000);
     } catch (err) {
+      console.error("Error initiating call:", err);
       setError(err as Error);
     }
   };
 
   const acceptCall = async () => {
     try {
+      if (!incomingCall) {
+        console.warn("No incoming call to accept");
+        return;
+      }
+      if (!callSocket.isConnected) {
+        throw new Error("Socket not connected");
+      }
+      console.log("Accepting call:", incomingCall.callId);
       setError(null);
-      setIncomingCall(null);
+      callSocket.acceptCall({
+        callId: incomingCall.callId,
+        callerId: incomingCall.callerId,
+      });
       await webRTCManagerRef.current?.acceptCall();
+      setCallInfo({
+        callId: incomingCall.callId,
+        recipientId: incomingCall.callerId,
+        recipientName: incomingCall.callerName,
+        startTime: Date.now(),
+      });
+      setIncomingCall(null);
     } catch (err) {
+      console.error("Error accepting call:", err);
       setError(err as Error);
     }
   };
 
   const rejectCall = () => {
+    if (!incomingCall) {
+      console.warn("No incoming call to reject");
+      return;
+    }
+    console.log("Rejecting call:", incomingCall.callId);
+    callSocket.declineCall({
+      callId: incomingCall.callId,
+    });
     webRTCManagerRef.current?.rejectCall();
     setIncomingCall(null);
   };
 
   const endCall = () => {
+    if (!callInfo?.callId) {
+      console.warn("No active call to end");
+      return;
+    }
+    if (!currentUserId) {
+      console.warn("No current user ID");
+      return;
+    }
+    console.log("Ending call:", callInfo.callId);
+    const receiverId = callInfo.recipientId || "";
+    if (callSocket.isConnected) {
+      callSocket.endCall({
+        callId: callInfo.callId,
+        callerId: currentUserId,
+        receiverId,
+      });
+    }
     webRTCManagerRef.current?.endCall();
     setCallInfo(null);
   };
@@ -134,11 +263,9 @@ export const useWebRTC = () => {
 
   const enableVideo = async () => {
     if (!webRTCManagerRef.current) return;
-
     try {
       console.log("Enabling video...");
       const success = await webRTCManagerRef.current.enableVideo();
-
       if (success) {
         setCallType("VIDEO");
         setIsVideoOff(false);
@@ -154,10 +281,28 @@ export const useWebRTC = () => {
     await webRTCManagerRef.current?.switchCamera();
   };
 
+  const getCallStatus = async (callId: string) => {
+    try {
+      const baseUrl = process.env.EXPO_PUBLIC_BASE_API || "";
+      const response = await fetch(
+        `${baseUrl}/realtime-call/${callId}/status`,
+        {
+          headers: {
+            Authorization: `Bearer ${callSocket.currentUserId}`,
+          },
+        }
+      );
+      return await response.json();
+    } catch (err) {
+      console.error("Error getting call status:", err);
+      setError(err as Error);
+      return null;
+    }
+  };
+
   const isCallActive = callState !== "idle" && callState !== "ended";
 
   return {
-    // State
     callState,
     callType: callType || webRTCManagerRef.current?.getCallType() || "AUDIO",
     localStream,
@@ -167,8 +312,8 @@ export const useWebRTC = () => {
     error,
     incomingCall,
     callInfo,
-
-    // Actions
+    isSocketConnected: callSocket.isConnected,
+    socketError: callSocket.error,
     initiateCall,
     acceptCall,
     rejectCall,
@@ -177,9 +322,9 @@ export const useWebRTC = () => {
     toggleVideo,
     enableVideo,
     switchCamera,
-
-    // Utilities
+    getCallStatus,
     isCallActive,
     isConnected: callState === "connected",
+    currentUserId,
   };
 };

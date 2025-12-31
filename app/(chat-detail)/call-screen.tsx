@@ -75,12 +75,12 @@ export default function CallScreen() {
       setReceiverAvatar((params.userName as string).charAt(0).toUpperCase());
     }
     // Then try from callInfo
-    else if (callInfo?.participantName) {
-      setReceiverName(callInfo.participantName);
-      setReceiverAvatar(callInfo.participantName.charAt(0).toUpperCase());
+    else if (callInfo?.recipientName) {
+      setReceiverName(callInfo.recipientName);
+      setReceiverAvatar(callInfo.recipientName.charAt(0).toUpperCase());
     }
     // Fallback to callInfo data
-    else if (callInfo?.conversationId) {
+    else if (callInfo?.recipientId) {
       setReceiverName("User");
       setReceiverAvatar("U");
     }
@@ -131,8 +131,10 @@ export default function CallScreen() {
     switch (callState) {
       case "initiating":
         return "Initiating...";
-      case "ringing":
+      case "outgoing":
         return "Ringing...";
+      case "incoming":
+        return "Incoming...";
       case "connecting":
         return "Connecting...";
       case "connected":
