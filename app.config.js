@@ -2,16 +2,11 @@ export default {
   expo: {
     name: "communication-app",
     slug: "communication-app",
-    version: "1.0.0",
-    orientation: "portrait",
     scheme: "communicationapp",
-    userInterfaceStyle: "automatic",
-    newArchEnabled: true,
-
-    icon: "./assets/images/icon.png",
-
     extra: {
-      BASE_URL: process.env.EXPO_PUBLIC_BASE_API || "http://192.168.31.5:3000",
+      BASE_URL:
+        process.env.EXPO_PUBLIC_BASE_API ||
+        "https://unwritable-israel-ecclesiological.ngrok-free.dev",
       eas: {
         projectId: "cfeb8f68-3ab5-438a-9d77-9c9ee7042393",
       },

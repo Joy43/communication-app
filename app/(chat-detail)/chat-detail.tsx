@@ -24,8 +24,8 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import { useWebRTCContext } from "../contexts/WebRTCContext";
 import { useSocket } from "../hooks/useSocket";
-import { useWebRTC } from "../hooks/useWebRTC";
 import { selectUser } from "../redux/auth/auth.slice";
 import { useAppSelector } from "../redux/hook";
 
@@ -65,7 +65,8 @@ export default function ChatDetailScreen() {
   } = useSocket();
 
   // WebRTC hook
-  const { initiateCall, isCallActive } = useWebRTC();
+  const { initiateCall, callState } = useWebRTCContext();
+  const isCallActive = callState !== "idle" && callState !== "ended";
 
   const conversationMessages = messages[conversationId as string] || [];
   const isRecipientOnline = onlineUsers[userId as string] || false;
@@ -207,7 +208,8 @@ export default function ChatDetailScreen() {
 
     try {
       console.log("Initiating voice call...");
-      await initiateCall(conversationId as string, "AUDIO");
+      console.log("Initiating call to:", userId);
+      await initiateCall(userId as string, "AUDIO", userName as string);
 
       // Navigate to call screen with receiver info
       router.push({
@@ -245,7 +247,8 @@ export default function ChatDetailScreen() {
 
     try {
       console.log("Initiating video call...");
-      await initiateCall(conversationId as string, "VIDEO");
+      console.log("Initiating call to:", userId);
+      await initiateCall(userId as string, "VIDEO", userName as string);
 
       // Navigate to call screen with receiver info
       router.push({
@@ -312,8 +315,8 @@ export default function ChatDetailScreen() {
                       {isRecipientTyping
                         ? "Typing..."
                         : isRecipientOnline
-                          ? "Online"
-                          : "Offline"}
+                        ? "Online"
+                        : "Offline"}
                     </Text>
                   </View>
                 </View>

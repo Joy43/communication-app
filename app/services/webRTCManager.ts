@@ -50,6 +50,7 @@ export class WebRTCManager {
   private callType: CallType = "AUDIO";
   private state: CallState = "idle";
   private iceCandidatesQueue: RTCIceCandidateInit[] = [];
+  private pendingOffer: { roomId: string; offer: any } | null = null;
 
   private onStateChange: (state: CallState) => void;
   private onRemoteStream: (stream: MediaStream) => void;
@@ -73,10 +74,32 @@ export class WebRTCManager {
 
   private iceServers = {
     iceServers: [
+      // Google's public STUN servers (for NAT traversal)
       { urls: "stun:stun.l.google.com:19302" },
       { urls: "stun:stun1.l.google.com:19302" },
       { urls: "stun:stun2.l.google.com:19302" },
+      { urls: "stun:stun3.l.google.com:19302" },
+      { urls: "stun:stun4.l.google.com:19302" },
+
+      // Free TURN servers from Metered (Open Relay Project)
+      // These work for most scenarios including symmetric NAT
+      {
+        urls: "turn:openrelay.metered.ca:80",
+        username: "openrelayproject",
+        credential: "openrelayproject",
+      },
+      {
+        urls: "turn:openrelay.metered.ca:443",
+        username: "openrelayproject",
+        credential: "openrelayproject",
+      },
+      {
+        urls: "turn:openrelay.metered.ca:443?transport=tcp",
+        username: "openrelayproject",
+        credential: "openrelayproject",
+      },
     ],
+    iceCandidatePoolSize: 10, // Pre-gather ICE candidates for faster connection
   };
 
   constructor(config: WebRTCManagerConfig) {
@@ -88,6 +111,15 @@ export class WebRTCManager {
     this.onSendOffer = config.onSendOffer;
     this.onSendAnswer = config.onSendAnswer;
     this.onSendIceCandidate = config.onSendIceCandidate;
+  }
+
+  // Getter for callId to allow checking from outside
+  get hasActiveCall(): boolean {
+    return this.callId !== null;
+  }
+
+  get activeCallId(): string | null {
+    return this.callId;
   }
 
   private setState(state: CallState) {
@@ -118,7 +150,14 @@ export class WebRTCManager {
 
       await this.peerConnection!.setLocalDescription(offer);
 
-      console.log("Sending WebRTC offer");
+      console.log("📤 Sending WebRTC offer:", {
+        callId,
+        recipientUserId,
+        offerType: offer.type,
+        offerLength: offer.sdp?.length,
+        peerConnectionState: this.peerConnection?.connectionState,
+        iceGatheringState: this.peerConnection?.iceGatheringState,
+      });
 
       this.onSendOffer({
         roomId: callId,
@@ -126,6 +165,7 @@ export class WebRTCManager {
         receiverId: recipientUserId,
       });
 
+      console.log("✅ WebRTC offer sent successfully");
       this.setState("outgoing");
     } catch (error) {
       console.error("Error initiating call:", error);
@@ -179,31 +219,53 @@ export class WebRTCManager {
   }
 
   async handleWebRTCOffer(data: { roomId: string; offer: any }): Promise<void> {
+    console.log("📥 handleWebRTCOffer called:", {
+      receivedRoomId: data.roomId,
+      expectedCallId: this.callId,
+      hasPeerConnection: !!this.peerConnection,
+      currentState: this.state,
+    });
+
     if (data.roomId !== this.callId) {
-      console.warn("Received offer for different call:", data.roomId);
+      console.warn("❌ Received offer for different call:", {
+        received: data.roomId,
+        expected: this.callId,
+      });
+      return;
+    }
+
+    // If peer connection isn't ready yet, queue the offer
+    if (!this.peerConnection) {
+      console.log("⏸️ Peer connection not ready yet - queuing offer for later");
+      this.pendingOffer = data;
       return;
     }
 
     try {
-      console.log("Handling WebRTC offer");
+      console.log("✅ Processing WebRTC offer for correct call");
 
-      if (!this.peerConnection) {
-        console.error("Peer connection not setup");
-        throw new Error("Peer connection not setup");
-      }
-
+      console.log("Creating RTCSessionDescription from offer");
       const offer = new RTCSessionDescription({
         type: "offer",
         sdp: data.offer,
       });
 
+      console.log("Setting remote description...");
       await this.peerConnection.setRemoteDescription(offer);
+      console.log("✅ Remote description set successfully");
+
+      console.log("Processing queued ICE candidates...");
       await this.processQueuedIceCandidates();
 
+      console.log("Creating answer...");
       const answer = await this.peerConnection.createAnswer();
-      await this.peerConnection.setLocalDescription(answer);
+      console.log("✅ Answer created successfully");
 
-      console.log("Sending WebRTC answer");
+      console.log("Setting local description...");
+      await this.peerConnection.setLocalDescription(answer);
+      console.log("✅ Local description set successfully");
+
+      console.log("📤 Sending WebRTC answer via socket");
 
       this.onSendAnswer({
         roomId: this.callId!,
@@ -211,9 +273,12 @@ export class WebRTCManager {
         callerId: this.remoteUserId!,
       });
 
+      console.log(
+        "✅ WebRTC negotiation complete - setting state to connected"
+      );
       this.setState("connected");
     } catch (error) {
-      console.error("Error handling offer:", error);
+      console.error("❌ Error handling offer:", error);
       this.onError(error as Error);
       this.endCall();
     }
@@ -459,7 +524,15 @@ export class WebRTCManager {
 
   private async setupPeerConnection() {
     try {
-      console.log("Setting up peer connection");
+      console.log("🔧 Setting up peer connection with ICE servers:", {
+        stunServers: this.iceServers.iceServers.filter((s: any) =>
+          s.urls.includes("stun")
+        ).length,
+        turnServers: this.iceServers.iceServers.filter((s: any) =>
+          s.urls.includes("turn")
+        ).length,
+        totalServers: this.iceServers.iceServers.length,
+      });
 
       this.peerConnection = new RTCPeerConnection(this.iceServers);
 
@@ -511,6 +584,14 @@ export class WebRTCManager {
       };
 
       console.log("Peer connection setup complete");
+
+      // Process pending offer if one arrived early
+      if (this.pendingOffer) {
+        console.log("🔄 Processing pending offer that arrived early");
+        const offer = this.pendingOffer;
+        this.pendingOffer = null;
+        await this.handleWebRTCOffer(offer);
+      }
     } catch (error) {
       console.error("Failed to setup peer connection:", error);
       this.onError(new Error("Failed to setup connection. Please try again."));

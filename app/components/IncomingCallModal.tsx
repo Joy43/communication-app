@@ -1,26 +1,29 @@
-
-import React, { useEffect } from 'react';
+import { Phone, PhoneOff, Video } from "lucide-react-native";
+import React, { useEffect } from "react";
 import {
+  Animated,
   Modal,
-  View,
+  StyleSheet,
   Text,
   TouchableOpacity,
-  StyleSheet,
-  Animated,
   Vibration,
-} from 'react-native';
-import { Phone, PhoneOff, Video } from 'lucide-react-native';
+  View,
+} from "react-native";
 
-import { useRouter } from 'expo-router';
-import { useWebRTC } from '../hooks/useWebRTC';
+import { useRouter } from "expo-router";
+import { useWebRTCContext } from "../contexts/WebRTCContext";
 
 export const IncomingCallModal = () => {
   const router = useRouter();
-  const { incomingCall, acceptCall, rejectCall } = useWebRTC();
+  const { incomingCall, acceptCall, rejectCall } = useWebRTCContext();
   const pulseAnim = new Animated.Value(1);
 
   useEffect(() => {
     if (incomingCall) {
+      console.log(
+        "IncomingCallModal: Displaying incoming call from",
+        incomingCall.callerName
+      );
       // Start vibration pattern
       Vibration.vibrate([0, 1000, 1000], true);
 
@@ -47,13 +50,20 @@ export const IncomingCallModal = () => {
   }, [incomingCall]);
 
   const handleAccept = async () => {
+    console.log("IncomingCallModal: Accepting call");
     await acceptCall();
-    router.push('/call-screen');
+    router.push("/call-screen");
   };
 
   const handleReject = () => {
+    console.log("IncomingCallModal: Rejecting call");
     rejectCall();
   };
+
+  console.log(
+    "IncomingCallModal render - incomingCall:",
+    incomingCall ? "YES" : "NO"
+  );
 
   if (!incomingCall) return null;
 
@@ -69,10 +79,7 @@ export const IncomingCallModal = () => {
           {/* Caller Info */}
           <View style={styles.callerInfo}>
             <Animated.View
-              style={[
-                styles.avatar,
-                { transform: [{ scale: pulseAnim }] },
-              ]}
+              style={[styles.avatar, { transform: [{ scale: pulseAnim }] }]}
             >
               <Text style={styles.avatarText}>
                 {incomingCall.callerName.charAt(0).toUpperCase()}
@@ -80,13 +87,13 @@ export const IncomingCallModal = () => {
             </Animated.View>
 
             <Text style={styles.callerName}>{incomingCall.callerName}</Text>
-            
+
             <View style={styles.callTypeContainer}>
-              {incomingCall.type === 'VIDEO' && (
+              {incomingCall.type === "VIDEO" && (
                 <Video size={20} color="#3B82F6" />
               )}
               <Text style={styles.callType}>
-                {incomingCall.type === 'VIDEO' ? 'Video Call' : 'Voice Call'}
+                {incomingCall.type === "VIDEO" ? "Video Call" : "Voice Call"}
               </Text>
             </View>
 
@@ -122,78 +129,78 @@ export const IncomingCallModal = () => {
 const styles = StyleSheet.create({
   overlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.9)',
-    justifyContent: 'center',
-    alignItems: 'center',
+    backgroundColor: "rgba(0, 0, 0, 0.9)",
+    justifyContent: "center",
+    alignItems: "center",
   },
   container: {
-    width: '85%',
-    backgroundColor: '#1a1a1a',
+    width: "85%",
+    backgroundColor: "#1a1a1a",
     borderRadius: 20,
     padding: 30,
-    alignItems: 'center',
+    alignItems: "center",
   },
   callerInfo: {
-    alignItems: 'center',
+    alignItems: "center",
     marginBottom: 40,
   },
   avatar: {
     width: 100,
     height: 100,
     borderRadius: 50,
-    backgroundColor: '#3B82F6',
-    justifyContent: 'center',
-    alignItems: 'center',
+    backgroundColor: "#3B82F6",
+    justifyContent: "center",
+    alignItems: "center",
     marginBottom: 20,
   },
   avatarText: {
     fontSize: 40,
-    color: '#fff',
-    fontWeight: '600',
+    color: "#fff",
+    fontWeight: "600",
   },
   callerName: {
     fontSize: 28,
-    fontWeight: '600',
-    color: '#fff',
+    fontWeight: "600",
+    color: "#fff",
     marginBottom: 8,
   },
   callTypeContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     gap: 6,
     marginBottom: 12,
   },
   callType: {
     fontSize: 16,
-    color: '#3B82F6',
-    fontWeight: '500',
+    color: "#3B82F6",
+    fontWeight: "500",
   },
   incomingText: {
     fontSize: 16,
-    color: 'rgba(255, 255, 255, 0.7)',
+    color: "rgba(255, 255, 255, 0.7)",
   },
   actions: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    width: '100%',
+    flexDirection: "row",
+    justifyContent: "space-around",
+    width: "100%",
     gap: 20,
   },
   actionButton: {
     flex: 1,
-    alignItems: 'center',
+    alignItems: "center",
     paddingVertical: 16,
     borderRadius: 12,
     gap: 8,
   },
   rejectButton: {
-    backgroundColor: '#EF4444',
+    backgroundColor: "#EF4444",
   },
   acceptButton: {
-    backgroundColor: '#10B981',
+    backgroundColor: "#10B981",
   },
   actionText: {
-    color: '#fff',
+    color: "#fff",
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: "600",
   },
 });

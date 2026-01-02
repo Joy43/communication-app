@@ -1,10 +1,12 @@
 import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
+import Constants from "expo-constants";
 
 import { RootState } from "../store";
 
 // Get the base URL with fallbacks
 const apiUrl =
-  process.env.EXPO_PUBLIC_BASE_API || "https://a103c7d01944.ngrok-free.app";
+  Constants.expoConfig?.extra?.BASE_URL ||
+  "https://a103c7d01944.ngrok-free.app";
 console.log("API Base URL:", apiUrl);
 if (!apiUrl) {
   console.error("VITE_API_URL is not set! Check your .env file.");

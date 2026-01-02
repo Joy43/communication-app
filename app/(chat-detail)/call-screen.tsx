@@ -1,4 +1,4 @@
-import { useWebRTC } from "@/app/hooks/useWebRTC";
+import { useWebRTCContext } from "@/app/contexts/WebRTCContext";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import {
   Mic,
@@ -37,10 +37,9 @@ export default function CallScreen() {
     toggleMute,
     toggleVideo,
     switchCamera,
-    isConnected,
+    isSocketConnected,
     callInfo,
-    enableVideo,
-  } = useWebRTC();
+  } = useWebRTCContext();
 
   // Get receiver info from params or callInfo
   const [receiverName, setReceiverName] = useState<string>("User");
@@ -52,21 +51,38 @@ export default function CallScreen() {
     callType === "VIDEO" || (localStream?.getVideoTracks().length ?? 0) > 0;
 
   const handleVideoToggle = async () => {
-    if (callType === "AUDIO" && !isVideoCall) {
-      // Upgrade audio call to video call
-      console.log("Upgrading to video call...");
-      await enableVideo();
-    } else {
-      // Toggle video on/off for existing video call
-      toggleVideo();
-    }
+    toggleVideo();
   };
 
   useEffect(() => {
     console.log("Call Screen - callType:", callType);
     console.log("Call Screen - localStream:", localStream ? "exists" : "null");
+    console.log(
+      "Call Screen - remoteStream:",
+      remoteStream ? "exists" : "null"
+    );
     console.log("Call Screen - isVideoCall:", isVideoCall);
-  }, [callType, localStream, isVideoCall]);
+    console.log("Call Screen - callState:", callState);
+    console.log("Call Screen - isSocketConnected:", isSocketConnected);
+
+    if (remoteStream) {
+      console.log(
+        "Call Screen - remoteStream video tracks:",
+        remoteStream.getVideoTracks().length
+      );
+      console.log(
+        "Call Screen - remoteStream audio tracks:",
+        remoteStream.getAudioTracks().length
+      );
+    }
+  }, [
+    callType,
+    localStream,
+    remoteStream,
+    isVideoCall,
+    callState,
+    isSocketConnected,
+  ]);
 
   useEffect(() => {
     // Try to get receiver info from params first
@@ -88,7 +104,7 @@ export default function CallScreen() {
 
   // Update call duration every second when connected
   useEffect(() => {
-    let interval: number;
+    let interval: NodeJS.Timeout | undefined;
 
     if (callState === "connected" && callInfo?.startTime) {
       interval = setInterval(() => {
@@ -103,7 +119,7 @@ export default function CallScreen() {
               .padStart(2, "0")}`
           );
         }
-      }, 1000) as number;
+      }, 1000);
     }
 
     return () => {
@@ -155,7 +171,7 @@ export default function CallScreen() {
       <StatusBar barStyle="light-content" backgroundColor="#1a1a1a" />
       <SafeAreaView className="flex-1 bg-[#1a1a1a]">
         {/* Remote Video (Full Screen) */}
-        {remoteStream && isConnected && isVideoCall ? (
+        {remoteStream && isVideoCall ? (
           <RTCView
             streamURL={remoteStream.toURL()}
             style={{ width, height }}
