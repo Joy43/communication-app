@@ -1,4 +1,4 @@
-// app/components/IncomingCallModal.tsx
+
 import React, { useEffect } from 'react';
 import {
   Modal,
@@ -10,7 +10,7 @@ import {
   Vibration,
 } from 'react-native';
 import { Phone, PhoneOff, Video } from 'lucide-react-native';
-// import { useWebRTC } from '../hooks/useWebRTC';
+
 import { useRouter } from 'expo-router';
 import { useWebRTC } from '../hooks/useWebRTC';
 

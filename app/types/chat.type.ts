@@ -1,5 +1,41 @@
 // app/types/chat.type.ts
 
+// Call-related types matching backend schema
+export type CallStatus =
+  | "CALLING"
+  | "RINING" // Note: Backend has typo, should be "RINGING"
+  | "ACTIVE"
+  | "END"
+  | "MISSED"
+  | "DECLINED";
+
+export type CallType = "AUDIO" | "VIDEO";
+
+export interface CallParticipant {
+  id: string;
+  callId: string;
+  socketId: string;
+  userName: string;
+  hasVideo: boolean;
+  hasAudio: boolean;
+  joinedAt: string;
+  leftAt?: string;
+}
+
+export interface Call {
+  id: string;
+  hostUserId: string;
+  recipientUserId?: string;
+  status: CallStatus;
+  title?: string;
+  isPrivate: boolean;
+  startedAt?: string;
+  endedAt?: string;
+  createdAt: string;
+  updatedAt: string;
+  participants?: CallParticipant[];
+}
+
 export interface TPrivateChatUser {
   id: string;
   name: string;

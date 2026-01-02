@@ -50,7 +50,7 @@ export const useCallSocket = (callbacks?: CallSocketCallbacks) => {
       reconnectionAttempts: 5,
     });
 
-    console.log('connecting to socket', socket.id);
+    console.log("connecting to socket", socket.id);
     socketRef.current = socket;
 
     // Connection events
@@ -223,7 +223,7 @@ export const useCallSocket = (callbacks?: CallSocketCallbacks) => {
   }) => {
     if (!socketRef.current?.connected) {
       console.error("Socket not connected");
-      return; // Don't throw error for ICE candidates
+      return;
     }
     socketRef.current.emit("ice-candidate", data);
   };

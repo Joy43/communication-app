@@ -1,13 +1,15 @@
 import { useEffect, useRef, useState } from "react";
 import { MediaStream } from "react-native-webrtc";
-import { selectUser } from "../redux/auth/auth.slice";
+import { selectaccessToken, selectUser } from "../redux/auth/auth.slice";
 import { useAppSelector } from "../redux/hook";
 import { CallState, CallType, WebRTCManager } from "../services/webRTCManager";
+import { Call } from "../types/chat.type";
 import { useCallSocket } from "./useCallSocket";
 
 export const useWebRTC = () => {
   const currentUser = useAppSelector(selectUser);
   const currentUserId = currentUser?.id;
+  const accessToken = useAppSelector(selectaccessToken);
 
   const webRTCManagerRef = useRef<WebRTCManager | null>(null);
 
@@ -39,7 +41,7 @@ export const useWebRTC = () => {
         callId: data.callId,
         callerId: data.from,
         callerName: data.title || "Unknown User",
-        type: "AUDIO",
+        type: "AUDIO", // Default to AUDIO, can be updated when offer is received
         title: data.title,
       });
       if (webRTCManagerRef.current && currentUserId) {
@@ -58,9 +60,20 @@ export const useWebRTC = () => {
         recipientId: data.to,
         startTime: Date.now(),
       });
+
+      // Now initiate WebRTC connection after backend confirms call creation
+      if (webRTCManagerRef.current && currentUserId && callType) {
+        webRTCManagerRef.current
+          .initiateCall(data.callId, data.to, callType)
+          .catch((err) => {
+            console.error("Error initiating WebRTC after call-started:", err);
+            setError(err);
+          });
+      }
     },
     onCallActive: (data) => {
       console.log("Call active:", data);
+      setCallState("connected");
     },
     onCallDeclined: (data) => {
       console.log("Call declined:", data);
@@ -162,23 +175,13 @@ export const useWebRTC = () => {
       console.log("Initiating call to:", recipientUserId);
       setCallType(type);
       setError(null);
+
+      // Only emit the socket event - WebRTC will be initiated after call-started event
       callSocket.startCall({
         hostUserId: currentUserId,
         recipientUserId,
         title,
       });
-      setTimeout(async () => {
-        if (callInfo?.callId) {
-          await webRTCManagerRef.current?.initiateCall(
-            callInfo.callId,
-            recipientUserId,
-            type
-          );
-        } else {
-          console.error("Call ID not received from backend");
-          setError(new Error("Failed to start call"));
-        }
-      }, 1000);
     } catch (err) {
       console.error("Error initiating call:", err);
       setError(err as Error);
@@ -281,17 +284,20 @@ export const useWebRTC = () => {
     await webRTCManagerRef.current?.switchCamera();
   };
 
-  const getCallStatus = async (callId: string) => {
+  const getCallStatus = async (callId: string): Promise<Call | null> => {
     try {
       const baseUrl = process.env.EXPO_PUBLIC_BASE_API || "";
-      const response = await fetch(
-        `${baseUrl}/realtime-call/${callId}/status`,
-        {
-          headers: {
-            Authorization: `Bearer ${callSocket.currentUserId}`,
-          },
-        }
-      );
+      const response = await fetch(`${baseUrl}/call/${callId}/status`, {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          "Content-Type": "application/json",
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error(`Failed to get call status: ${response.statusText}`);
+      }
+
       return await response.json();
     } catch (err) {
       console.error("Error getting call status:", err);
