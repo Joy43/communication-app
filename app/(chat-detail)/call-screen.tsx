@@ -104,7 +104,7 @@ export default function CallScreen() {
 
   // Update call duration every second when connected
   useEffect(() => {
-    let interval: NodeJS.Timeout | undefined;
+    let interval: number | undefined;
 
     if (callState === "connected" && callInfo?.startTime) {
       interval = setInterval(() => {
@@ -119,7 +119,7 @@ export default function CallScreen() {
               .padStart(2, "0")}`
           );
         }
-      }, 1000);
+      }, 1000) as number;
     }
 
     return () => {
@@ -249,7 +249,7 @@ export default function CallScreen() {
           <View className="flex-row justify-center items-center gap-5">
             {/* Mute Button */}
             <TouchableOpacity
-              className={`w-15 h-15 rounded-full justify-center items-center ${
+              className={`w-20 h-20 rounded-full justify-center items-center ${
                 isMuted ? "bg-red-500/80" : "bg-white/20"
               }`}
               onPress={toggleMute}
@@ -264,17 +264,17 @@ export default function CallScreen() {
 
             {/* End Call Button */}
             <TouchableOpacity
-              className="w-[70px] h-[70px] rounded-full bg-red-500 justify-center items-center"
+              className="w-[50px] h-[50px] rounded-full bg-red-500 justify-center items-center"
               onPress={handleEndCall}
               activeOpacity={0.8}
             >
-              <PhoneOff size={32} color="#fff" />
+              <PhoneOff size={30} color="#fff" />
             </TouchableOpacity>
 
             {/* Video Toggle Button */}
             <TouchableOpacity
               className={`w-15 h-15 rounded-full justify-center items-center ${
-                isVideoOff ? "bg-red-500/80" : "bg-white/20"
+                isVideoOff ? "bg-red-500/80" : "bg-green-500/20"
               }`}
               onPress={handleVideoToggle}
               activeOpacity={0.8}
