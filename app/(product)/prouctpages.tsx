@@ -3,8 +3,9 @@ import React from 'react'
 
 const ProductPages = () => {
   return (
-    <View>
+    <View className='flex-1 justify-center items-center'>
       <Text>Product Pages</Text>
+      <Text>  Under Construction</Text>
     </View>
   )
 }
