@@ -257,7 +257,20 @@ export class WebRTCManager {
       console.log("Processing queued ICE candidates...");
       await this.processQueuedIceCandidates();
 
-      console.log("Creating answer...");
+      console.log("Creating answer for call type:", this.callType);
+      // Log local stream tracks before creating answer
+      if (this.localStream) {
+        console.log("📹 Local stream tracks before answer:", {
+          audioTracks: this.localStream.getAudioTracks().length,
+          videoTracks: this.localStream.getVideoTracks().length,
+        });
+        this.localStream.getTracks().forEach((track) => {
+          console.log(`📹 Track: ${track.kind}, enabled: ${track.enabled}, readyState: ${track.readyState}`);
+        });
+      } else {
+        console.warn("⚠️ No local stream available when creating answer!");
+      }
+      
       const answer = await this.peerConnection.createAnswer();
       console.log("✅ Answer created successfully");
 
@@ -537,10 +550,13 @@ export class WebRTCManager {
       this.peerConnection = new RTCPeerConnection(this.iceServers);
 
       if (this.localStream) {
+        console.log("📤 Adding local tracks to peer connection:");
         this.localStream.getTracks().forEach((track) => {
-          console.log("Adding local track:", track.kind);
+          console.log(`📤 Adding ${track.kind} track: enabled=${track.enabled}, readyState=${track.readyState}`);
           this.peerConnection!.addTrack(track, this.localStream!);
         });
+      } else {
+        console.warn("⚠️ No local stream to add to peer connection!");
       }
 
       // @ts-ignore - react-native-webrtc event handlers
@@ -561,12 +577,26 @@ export class WebRTCManager {
 
       // @ts-ignore - react-native-webrtc event handlers
       this.peerConnection.ontrack = (event: any) => {
-        console.log("Received remote track:", event.track.kind);
+        console.log("📥 Received remote track:", {
+          kind: event.track.kind,
+          enabled: event.track.enabled,
+          readyState: event.track.readyState,
+          hasStreams: !!(event.streams && event.streams[0]),
+          streamsCount: event.streams?.length || 0,
+        });
+        
         if (event.streams && event.streams[0]) {
           this.remoteStream = event.streams[0];
           if (this.remoteStream) {
+            console.log("📥 Remote stream set:", {
+              audioTracks: this.remoteStream.getAudioTracks().length,
+              videoTracks: this.remoteStream.getVideoTracks().length,
+              id: this.remoteStream.id,
+            });
             this.onRemoteStream(this.remoteStream);
           }
+        } else {
+          console.warn("⚠️ No streams in track event!");
         }
       };
 

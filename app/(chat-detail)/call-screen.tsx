@@ -50,6 +50,10 @@ export default function CallScreen() {
   const isVideoCall =
     callType === "VIDEO" || (localStream?.getVideoTracks().length ?? 0) > 0;
 
+  // Check if remote stream has video tracks
+  const hasRemoteVideo =
+    remoteStream && remoteStream.getVideoTracks().length > 0;
+
   const handleVideoToggle = async () => {
     toggleVideo();
   };
@@ -62,6 +66,7 @@ export default function CallScreen() {
       remoteStream ? "exists" : "null"
     );
     console.log("Call Screen - isVideoCall:", isVideoCall);
+    console.log("Call Screen - hasRemoteVideo:", hasRemoteVideo);
     console.log("Call Screen - callState:", callState);
     console.log("Call Screen - isSocketConnected:", isSocketConnected);
 
@@ -74,12 +79,22 @@ export default function CallScreen() {
         "Call Screen - remoteStream audio tracks:",
         remoteStream.getAudioTracks().length
       );
+
+      // Log video track details
+      remoteStream.getVideoTracks().forEach((track, index) => {
+        console.log(`Call Screen - remoteStream video track ${index}:`, {
+          enabled: track.enabled,
+          readyState: track.readyState,
+          label: track.label,
+        });
+      });
     }
   }, [
     callType,
     localStream,
     remoteStream,
     isVideoCall,
+    hasRemoteVideo,
     callState,
     isSocketConnected,
   ]);
@@ -104,7 +119,7 @@ export default function CallScreen() {
 
   // Update call duration every second when connected
   useEffect(() => {
-    let interval: NodeJS.Timeout | undefined;
+    let interval: number | undefined;
 
     if (callState === "connected" && callInfo?.startTime) {
       interval = setInterval(() => {
@@ -119,7 +134,7 @@ export default function CallScreen() {
               .padStart(2, "0")}`
           );
         }
-      }, 1000);
+      }, 1000) as number;
     }
 
     return () => {
@@ -171,12 +186,13 @@ export default function CallScreen() {
       <StatusBar barStyle="light-content" backgroundColor="#1a1a1a" />
       <SafeAreaView className="flex-1 bg-[#1a1a1a]">
         {/* Remote Video (Full Screen) */}
-        {remoteStream && isVideoCall ? (
+        {hasRemoteVideo && remoteStream ? (
           <RTCView
             streamURL={remoteStream.toURL()}
             style={{ width, height }}
             objectFit="cover"
             className="bg-black"
+            zOrder={0}
           />
         ) : (
           <View
@@ -197,12 +213,16 @@ export default function CallScreen() {
 
         {/* Local Video (Picture in Picture) */}
         {localStream && isVideoCall && !isVideoOff && (
-          <View className="absolute top-[60px] right-5 w-[120px] h-[160px] rounded-xl overflow-hidden border-2 border-white">
+          <View
+            className="absolute top-[60px] right-5 w-[120px] h-[160px] rounded-xl overflow-hidden border-2 border-white"
+            style={{ zIndex: 10 }}
+          >
             <RTCView
               streamURL={localStream.toURL()}
               style={{ width: "100%", height: "100%" }}
               objectFit="cover"
               mirror={true}
+              zOrder={1}
             />
           </View>
         )}
@@ -249,7 +269,7 @@ export default function CallScreen() {
           <View className="flex-row justify-center items-center gap-5">
             {/* Mute Button */}
             <TouchableOpacity
-              className={`w-15 h-15 rounded-full justify-center items-center ${
+              className={`w-20 h-20 rounded-full justify-center items-center ${
                 isMuted ? "bg-red-500/80" : "bg-white/20"
               }`}
               onPress={toggleMute}
@@ -264,17 +284,17 @@ export default function CallScreen() {
 
             {/* End Call Button */}
             <TouchableOpacity
-              className="w-[70px] h-[70px] rounded-full bg-red-500 justify-center items-center"
+              className="w-[50px] h-[50px] rounded-full bg-red-500 justify-center items-center"
               onPress={handleEndCall}
               activeOpacity={0.8}
             >
-              <PhoneOff size={32} color="#fff" />
+              <PhoneOff size={30} color="#fff" />
             </TouchableOpacity>
 
             {/* Video Toggle Button */}
             <TouchableOpacity
               className={`w-15 h-15 rounded-full justify-center items-center ${
-                isVideoOff ? "bg-red-500/80" : "bg-white/20"
+                isVideoOff ? "bg-red-500/80" : "bg-green-500/20"
               }`}
               onPress={handleVideoToggle}
               activeOpacity={0.8}

@@ -28,6 +28,7 @@ import { useWebRTCContext } from "../contexts/WebRTCContext";
 import { useSocket } from "../hooks/useSocket";
 import { selectUser } from "../redux/auth/auth.slice";
 import { useAppSelector } from "../redux/hook";
+import Toast from "react-native-toast-message";
 
 type Message = {
   id: string;
@@ -189,20 +190,32 @@ export default function ChatDetailScreen() {
 
   const handleVoiceCall = async () => {
     if (!conversationId) {
-      Alert.alert("Error", "No conversation found");
+      Toast.show({
+        type: "error",
+        text1: "Error",
+        text2: "No conversation found",
+        position: "bottom",
+      });
       return;
     }
 
     if (!isConnected) {
-      Alert.alert(
-        "Connection Error",
-        "Socket is not connected. Please try again."
-      );
+      Toast.show({
+        type: "error",
+        text1: "Connection Error",
+        text2: "Socket is not connected. Please try again.",
+        position: "bottom",
+      });
       return;
     }
 
     if (isCallActive) {
-      Alert.alert("Call in Progress", "You already have an active call");
+      Toast.show({
+        type: "error",
+        text1: "Call in Progress",
+        text2: "You already have an active call",
+        position: "bottom",
+      });
       return;
     }
 
