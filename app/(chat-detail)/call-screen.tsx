@@ -50,6 +50,10 @@ export default function CallScreen() {
   const isVideoCall =
     callType === "VIDEO" || (localStream?.getVideoTracks().length ?? 0) > 0;
 
+  // Check if remote stream has video tracks
+  const hasRemoteVideo =
+    remoteStream && remoteStream.getVideoTracks().length > 0;
+
   const handleVideoToggle = async () => {
     toggleVideo();
   };
@@ -62,6 +66,7 @@ export default function CallScreen() {
       remoteStream ? "exists" : "null"
     );
     console.log("Call Screen - isVideoCall:", isVideoCall);
+    console.log("Call Screen - hasRemoteVideo:", hasRemoteVideo);
     console.log("Call Screen - callState:", callState);
     console.log("Call Screen - isSocketConnected:", isSocketConnected);
 
@@ -74,12 +79,22 @@ export default function CallScreen() {
         "Call Screen - remoteStream audio tracks:",
         remoteStream.getAudioTracks().length
       );
+
+      // Log video track details
+      remoteStream.getVideoTracks().forEach((track, index) => {
+        console.log(`Call Screen - remoteStream video track ${index}:`, {
+          enabled: track.enabled,
+          readyState: track.readyState,
+          label: track.label,
+        });
+      });
     }
   }, [
     callType,
     localStream,
     remoteStream,
     isVideoCall,
+    hasRemoteVideo,
     callState,
     isSocketConnected,
   ]);
@@ -171,12 +186,13 @@ export default function CallScreen() {
       <StatusBar barStyle="light-content" backgroundColor="#1a1a1a" />
       <SafeAreaView className="flex-1 bg-[#1a1a1a]">
         {/* Remote Video (Full Screen) */}
-        {remoteStream && isVideoCall ? (
+        {hasRemoteVideo && remoteStream ? (
           <RTCView
             streamURL={remoteStream.toURL()}
             style={{ width, height }}
             objectFit="cover"
             className="bg-black"
+            zOrder={0}
           />
         ) : (
           <View
@@ -197,12 +213,16 @@ export default function CallScreen() {
 
         {/* Local Video (Picture in Picture) */}
         {localStream && isVideoCall && !isVideoOff && (
-          <View className="absolute top-[60px] right-5 w-[120px] h-[160px] rounded-xl overflow-hidden border-2 border-white">
+          <View
+            className="absolute top-[60px] right-5 w-[120px] h-[160px] rounded-xl overflow-hidden border-2 border-white"
+            style={{ zIndex: 10 }}
+          >
             <RTCView
               streamURL={localStream.toURL()}
               style={{ width: "100%", height: "100%" }}
               objectFit="cover"
               mirror={true}
+              zOrder={1}
             />
           </View>
         )}
