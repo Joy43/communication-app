@@ -6,7 +6,7 @@ export default {
     extra: {
       BASE_URL:
         process.env.EXPO_PUBLIC_BASE_API ||
-        "https://unwritable-israel-ecclesiological.ngrok-free.dev",
+        "https://communication-app-server.onrender.com",
       eas: {
         projectId: "cfeb8f68-3ab5-438a-9d77-9c9ee7042393",
       },

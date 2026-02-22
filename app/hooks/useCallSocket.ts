@@ -64,7 +64,7 @@ export const useCallSocket = (callbacks?: CallSocketCallbacks) => {
     );
 
     // Initialize socket connection to /call namespace
-    const baseUrl = "https://unwritable-israel-ecclesiological.ngrok-free.dev";
+    const baseUrl = "https://communication-app-server.onrender.com";
     console.log("useCallSocket: Call socket connecting to:", `${baseUrl}/call`);
     const socket = io(`${baseUrl}/call`, {
       auth: { token },
