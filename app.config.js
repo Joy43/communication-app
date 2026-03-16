@@ -8,7 +8,7 @@ export default {
         process.env.EXPO_PUBLIC_BASE_API ||
         "https://communication-app-server.onrender.com",
       eas: {
-        projectId: "cfeb8f68-3ab5-438a-9d77-9c9ee7042393",
+        projectId: "fd88d917-983a-46da-8c95-9f7af69274b5",
       },
     },
 

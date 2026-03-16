@@ -130,7 +130,7 @@ export class WebRTCManager {
   async initiateCall(
     callId: string,
     recipientUserId: string,
-    type: CallType
+    type: CallType,
   ): Promise<void> {
     try {
       this.setState("initiating");
@@ -179,7 +179,7 @@ export class WebRTCManager {
   async prepareForIncomingCall(
     callId: string,
     callerId: string,
-    type: CallType
+    type: CallType,
   ): Promise<void> {
     try {
       this.callId = callId;
@@ -265,12 +265,14 @@ export class WebRTCManager {
           videoTracks: this.localStream.getVideoTracks().length,
         });
         this.localStream.getTracks().forEach((track) => {
-          console.log(`📹 Track: ${track.kind}, enabled: ${track.enabled}, readyState: ${track.readyState}`);
+          console.log(
+            `📹 Track: ${track.kind}, enabled: ${track.enabled}, readyState: ${track.readyState}`,
+          );
         });
       } else {
         console.warn("⚠️ No local stream available when creating answer!");
       }
-      
+
       const answer = await this.peerConnection.createAnswer();
       console.log("✅ Answer created successfully");
 
@@ -287,7 +289,7 @@ export class WebRTCManager {
       });
 
       console.log(
-        "✅ WebRTC negotiation complete - setting state to connected"
+        "✅ WebRTC negotiation complete - setting state to connected",
       );
       this.setState("connected");
     } catch (error) {
@@ -368,7 +370,7 @@ export class WebRTCManager {
     }
 
     console.log(
-      `Processing ${this.iceCandidatesQueue.length} queued ICE candidates`
+      `Processing ${this.iceCandidatesQueue.length} queued ICE candidates`,
     );
 
     for (const candidate of this.iceCandidatesQueue) {
@@ -459,8 +461,8 @@ export class WebRTCManager {
       if (errorMessage.includes("Permission denied")) {
         this.onError(
           new Error(
-            "Camera permission denied. Please enable camera permissions."
-          )
+            "Camera permission denied. Please enable camera permissions.",
+          ),
         );
       } else {
         this.onError(new Error("Failed to enable video. Please try again."));
@@ -521,14 +523,14 @@ export class WebRTCManager {
       if (errorMessage.includes("Permission denied")) {
         this.onError(
           new Error(
-            "Camera/Microphone permission denied. Please enable permissions in settings."
-          )
+            "Camera/Microphone permission denied. Please enable permissions in settings.",
+          ),
         );
       } else if (errorMessage.includes("NotFoundError")) {
         this.onError(new Error("No camera or microphone found on device."));
       } else {
         this.onError(
-          new Error("Failed to access camera/microphone. Please try again.")
+          new Error("Failed to access camera/microphone. Please try again."),
         );
       }
       throw error;
@@ -539,10 +541,10 @@ export class WebRTCManager {
     try {
       console.log("🔧 Setting up peer connection with ICE servers:", {
         stunServers: this.iceServers.iceServers.filter((s: any) =>
-          s.urls.includes("stun")
+          s.urls.includes("stun"),
         ).length,
         turnServers: this.iceServers.iceServers.filter((s: any) =>
-          s.urls.includes("turn")
+          s.urls.includes("turn"),
         ).length,
         totalServers: this.iceServers.iceServers.length,
       });
@@ -552,7 +554,9 @@ export class WebRTCManager {
       if (this.localStream) {
         console.log("📤 Adding local tracks to peer connection:");
         this.localStream.getTracks().forEach((track) => {
-          console.log(`📤 Adding ${track.kind} track: enabled=${track.enabled}, readyState=${track.readyState}`);
+          console.log(
+            `📤 Adding ${track.kind} track: enabled=${track.enabled}, readyState=${track.readyState}`,
+          );
           this.peerConnection!.addTrack(track, this.localStream!);
         });
       } else {
@@ -584,7 +588,7 @@ export class WebRTCManager {
           hasStreams: !!(event.streams && event.streams[0]),
           streamsCount: event.streams?.length || 0,
         });
-        
+
         if (event.streams && event.streams[0]) {
           this.remoteStream = event.streams[0];
           if (this.remoteStream) {
