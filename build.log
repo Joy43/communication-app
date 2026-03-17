@@ -1,0 +1,15 @@
+Resolved "production" environment for the build. Learn more: https://docs.expo.dev/eas/environment-variables/#setting-the-environment-for-your-builds
+No environment variables with visibility "Plain text" and "Sensitive" found for the "production" environment on EAS.
+
+⠋ Incrementing versionCode from 3 to 4.⠙ Incrementing versionCode from 3 to 4.⠹ Incrementing versionCode from 3 to 4.⠸ Incrementing versionCode from 3 to 4.⠼ Incrementing versionCode from 3 to 4.✔ Incremented versionCode from 3 to 4.
+
+
+✔ Using remote Android credentials (Expo server)
+✔ Using Keystore from configuration: Build Credentials og3rUaFFjv (default)
+
+Compressing project files and uploading to EAS Build. Learn more: https://expo.fyi/eas-build-archive
+⠋ Compressing project files⠙ Compressing project files⠹ Compressing project files⠸ Compressing project files⠼ Compressing project files⠴ Compressing project files⠦ Compressing project files⠧ Compressing project files⠇ Compressing project files⠏ Compressing project files⠋ Compressing project files⠙ Compressing project files⠹ Compressing project files⠸ Compressing project files⠼ Compressing project files⠴ Compressing project files⠦ Compressing project files⠧ Compressing project files⠇ Compressing project files⠏ Compressing project files⠋ Compressing project files⠙ Compressing project files⠹ Compressing project files⠸ Compressing project files⠼ Compressing project files⠴ Compressing project files⠦ Compressing project files⠧ Compressing project files⠇ Compressing project files⠏ Compressing project files⠋ Compressing project files⠙ Compressing project files⠹ Compressing project files⠸ Compressing project files⠼ Compressing project files⠴ Compressing project files⠦ Compressing project files⠧ Compressing project files⠇ Compressing project files⠏ Compressing project files⠋ Compressing project files⠙ Compressing project files⠹ Compressing project files⠸ Compressing project files⠼ Compressing project files⠴ Compressing project files⠦ Compressing project files⠧ Compressing project files⠇ Compressing project files⠏ Compressing project files⠋ Compressing project files⠙ Compressing project files⠹ Compressing project files⠸ Compressing project files✖ Compressing project files
+Failed to upload the project tarball to EAS Build
+
+Reason: git clone --no-checkout --no-hardlinks --depth 1 file:///Users/ssjoy/Desktop/joy workplace/react native/communication-app /var/folders/89/vspkhlsd5_d1_09t46qf1g7m0000gn/T/eas-cli-nodejs/8412cecb-379e-4ea0-9a12-047cd114c240-shallow-clone exited with non-zero code: 128
+    Error: build command failed.
