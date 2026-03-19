@@ -55,26 +55,51 @@ export default function CallScreen() {
   };
 
   useEffect(() => {
-    console.log("Call Screen - callType:", callType);
-    console.log("Call Screen - localStream:", localStream ? "exists" : "null");
-    console.log(
-      "Call Screen - remoteStream:",
-      remoteStream ? "exists" : "null"
-    );
-    console.log("Call Screen - isVideoCall:", isVideoCall);
-    console.log("Call Screen - callState:", callState);
-    console.log("Call Screen - isSocketConnected:", isSocketConnected);
+    console.log("=== Call Screen Debug ===");
+    console.log("callType:", callType);
+    console.log("localStream:", localStream ? "✅ exists" : "❌ null");
+    console.log("remoteStream:", remoteStream ? "✅ exists" : "❌ null");
+    console.log("isVideoCall:", isVideoCall);
+    console.log("callState:", callState);
+    console.log("isSocketConnected:", isSocketConnected);
+    console.log("isVideoOff:", isVideoOff);
+
+    if (localStream) {
+      console.log(
+        "📹 localStream video tracks:",
+        localStream.getVideoTracks().length,
+      );
+      console.log(
+        "🔊 localStream audio tracks:",
+        localStream.getAudioTracks().length,
+      );
+      console.log(
+        "📹 localStream video enabled:",
+        localStream.getVideoTracks()[0]?.enabled,
+      );
+    }
 
     if (remoteStream) {
       console.log(
-        "Call Screen - remoteStream video tracks:",
-        remoteStream.getVideoTracks().length
+        "📹 remoteStream video tracks:",
+        remoteStream.getVideoTracks().length,
       );
       console.log(
-        "Call Screen - remoteStream audio tracks:",
-        remoteStream.getAudioTracks().length
+        "🔊 remoteStream audio tracks:",
+        remoteStream.getAudioTracks().length,
+      );
+      console.log(
+        "📹 remoteStream video enabled:",
+        remoteStream.getVideoTracks()[0]?.enabled,
       );
     }
+
+    console.log("Rendering conditions:");
+    console.log("  remoteStream && isVideoCall?", remoteStream && isVideoCall);
+    console.log(
+      "  localStream && isVideoCall && !isVideoOff?",
+      localStream && isVideoCall && !isVideoOff,
+    );
   }, [
     callType,
     localStream,
@@ -82,6 +107,7 @@ export default function CallScreen() {
     isVideoCall,
     callState,
     isSocketConnected,
+    isVideoOff,
   ]);
 
   useEffect(() => {
@@ -104,7 +130,7 @@ export default function CallScreen() {
 
   // Update call duration every second when connected
   useEffect(() => {
-    let interval: NodeJS.Timeout | undefined;
+    let interval: ReturnType<typeof setInterval> | undefined;
 
     if (callState === "connected" && callInfo?.startTime) {
       interval = setInterval(() => {
@@ -116,7 +142,7 @@ export default function CallScreen() {
           setCallDuration(
             `${minutes.toString().padStart(2, "0")}:${seconds
               .toString()
-              .padStart(2, "0")}`
+              .padStart(2, "0")}`,
           );
         }
       }, 1000);
@@ -170,7 +196,7 @@ export default function CallScreen() {
     <>
       <StatusBar barStyle="light-content" backgroundColor="#1a1a1a" />
       <SafeAreaView className="flex-1 bg-[#1a1a1a]">
-        {/* Remote Video (Full Screen) */}
+        {/* Remote Video (Full Screen) OR Placeholder */}
         {remoteStream && isVideoCall ? (
           <RTCView
             streamURL={remoteStream.toURL()}
@@ -195,17 +221,21 @@ export default function CallScreen() {
           </View>
         )}
 
-        {/* Local Video (Picture in Picture) */}
-        {localStream && isVideoCall && !isVideoOff && (
-          <View className="absolute top-[60px] right-5 w-[120px] h-[160px] rounded-xl overflow-hidden border-2 border-white">
+        {/* Local Video (Picture in Picture) - ALWAYS SHOW IF AVAILABLE */}
+        {localStream && isVideoCall ? (
+          <View className="absolute top-[60px] right-5 w-[120px] h-[160px] rounded-xl overflow-hidden border-2 border-white shadow-lg">
             <RTCView
               streamURL={localStream.toURL()}
               style={{ width: "100%", height: "100%" }}
               objectFit="cover"
               mirror={true}
             />
+            {/* Video status indicator */}
+            <View className="absolute bottom-2 left-2 bg-black/50 px-2 py-1 rounded-full">
+              <Text className="text-white text-xs font-semibold">You</Text>
+            </View>
           </View>
-        )}
+        ) : null}
 
         {/* Call Info Overlay */}
         <View

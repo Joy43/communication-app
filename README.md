@@ -16,6 +16,16 @@ This is an [Expo](https://expo.dev) project created with [`create-expo-app`](htt
    npx expo start
    ```
 
+3. development build
+
+```bash
+https://expo.dev/accounts/ssjoy43/projects/communication-app/builds/4ba6a55d-143a-438a-a0ba-9e304a167f1b
+```
+
+4. prebuild android and iso folder
+```bash
+npx expo prebuild
+```
 In the output, you'll find options to open the app in a
 
 - [development build](https://docs.expo.dev/develop/development-builds/introduction/)

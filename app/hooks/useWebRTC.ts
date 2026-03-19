@@ -13,7 +13,9 @@ export const useWebRTC = () => {
   const accessToken = useAppSelector(selectaccessToken);
 
   const webRTCManagerRef = useRef<WebRTCManager | null>(null);
-  const connectionTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const connectionTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(
+    null,
+  );
   const isCallerRef = useRef<boolean>(false);
 
   const [callState, setCallState] = useState<CallState>("idle");
@@ -55,19 +57,19 @@ export const useWebRTC = () => {
           await webRTCManagerRef.current.prepareForIncomingCall(
             data.callId,
             data.from,
-            "AUDIO"
+            "AUDIO",
           );
           console.log("useWebRTC: ✅ WebRTC manager prepared successfully");
         } catch (err) {
           console.error(
             "useWebRTC: ❌ Error preparing for incoming call:",
-            err
+            err,
           );
           setError(err as Error);
         }
       } else {
         console.warn(
-          "useWebRTC: Cannot prepare for call - missing WebRTC manager or user ID"
+          "useWebRTC: Cannot prepare for call - missing WebRTC manager or user ID",
         );
       }
     },
@@ -88,7 +90,7 @@ export const useWebRTC = () => {
       // Caller: Initiate WebRTC after backend confirms call creation
       if (webRTCManagerRef.current && currentUserId && callType) {
         console.log(
-          "📤 CALLER: Now initiating WebRTC and sending offer to recipient"
+          "📤 CALLER: Now initiating WebRTC and sending offer to recipient",
         );
         webRTCManagerRef.current
           .initiateCall(data.callId, data.to, callType)
@@ -98,7 +100,7 @@ export const useWebRTC = () => {
           });
       } else {
         console.error(
-          "❌ CALLER: Cannot initiate - missing manager, userId, or callType"
+          "❌ CALLER: Cannot initiate - missing manager, userId, or callType",
         );
       }
     },
@@ -114,14 +116,14 @@ export const useWebRTC = () => {
       // Caller should now send WebRTC offer
       if (isCallerRef.current && webRTCManagerRef.current) {
         console.log(
-          "✅ This device is CALLER - offer was already sent in initiateCall"
+          "✅ This device is CALLER - offer was already sent in initiateCall",
         );
         // The offer should have already been sent in initiateCall
         // Just update state
         setCallState("connecting");
       } else {
         console.log(
-          "⏳ This device is RECIPIENT - waiting for offer from caller"
+          "⏳ This device is RECIPIENT - waiting for offer from caller",
         );
         // Timeout is already started in acceptCall after peer connection is ready
         // Just ensure state is connecting if not already
@@ -135,6 +137,14 @@ export const useWebRTC = () => {
       setCallState("ended");
       setError(new Error("Call was declined"));
       setIncomingCall(null);
+      webRTCManagerRef.current?.endCall();
+    },
+    onCallCancelled: (data) => {
+      console.log("📞 Incoming call was cancelled by caller:", data);
+      // When caller cancels, receiver's incoming call should be cleared immediately
+      setCallState("ended");
+      setIncomingCall(null);
+      setError(null);
       webRTCManagerRef.current?.endCall();
     },
     onCallEnded: (data) => {
@@ -169,7 +179,7 @@ export const useWebRTC = () => {
       console.error("useWebRTC: Socket disconnected during call:", reason);
       if (callState !== "idle" && callState !== "ended") {
         setError(
-          new Error("Connection lost. Call ended due to network issue.")
+          new Error("Connection lost. Call ended due to network issue."),
         );
         // End the call after a short delay to show error message
         setTimeout(() => {
@@ -179,7 +189,7 @@ export const useWebRTC = () => {
     },
     onSocketReconnected: () => {
       console.warn(
-        "useWebRTC: Socket reconnected, but call signaling may be lost"
+        "useWebRTC: Socket reconnected, but call signaling may be lost",
       );
       // Don't automatically end - let timeout handle it
     },
@@ -252,8 +262,8 @@ export const useWebRTC = () => {
       console.error("Connection timeout - no WebRTC offer received");
       setError(
         new Error(
-          "Connection timeout. The other user may have connectivity issues."
-        )
+          "Connection timeout. The other user may have connectivity issues.",
+        ),
       );
       endCall();
     }, 30000); // 30 seconds timeout
@@ -270,7 +280,7 @@ export const useWebRTC = () => {
   const initiateCall = async (
     recipientUserId: string,
     type: CallType,
-    title?: string
+    title?: string,
   ) => {
     try {
       if (!currentUserId) {
@@ -312,11 +322,11 @@ export const useWebRTC = () => {
       console.log("📱 RECIPIENT: Accepting call:", incomingCall.callId);
       console.log(
         "📱 RECIPIENT: WebRTC manager has active call:",
-        webRTCManagerRef.current.hasActiveCall
+        webRTCManagerRef.current.hasActiveCall,
       );
       console.log(
         "📱 RECIPIENT: WebRTC manager callId:",
-        webRTCManagerRef.current.activeCallId
+        webRTCManagerRef.current.activeCallId,
       );
 
       // Mark as recipient (not caller)
@@ -325,16 +335,16 @@ export const useWebRTC = () => {
       // Ensure WebRTC manager has the call ID set
       if (!webRTCManagerRef.current.hasActiveCall) {
         console.log(
-          "acceptCall: WebRTC manager callId not set, preparing now..."
+          "acceptCall: WebRTC manager callId not set, preparing now...",
         );
         await webRTCManagerRef.current.prepareForIncomingCall(
           incomingCall.callId,
           incomingCall.callerId,
-          incomingCall.type
+          incomingCall.type,
         );
         console.log(
           "acceptCall: ✅ WebRTC manager prepared with callId:",
-          webRTCManagerRef.current.activeCallId
+          webRTCManagerRef.current.activeCallId,
         );
       }
 
@@ -361,7 +371,7 @@ export const useWebRTC = () => {
         startTime: Date.now(),
       });
       console.log(
-        "acceptCall: ✅ Call accepted successfully, waiting for offer..."
+        "acceptCall: ✅ Call accepted successfully, waiting for offer...",
       );
       setIncomingCall(null);
     } catch (err) {
@@ -383,6 +393,25 @@ export const useWebRTC = () => {
     });
     webRTCManagerRef.current?.rejectCall();
     setIncomingCall(null);
+  };
+
+  const cancelCall = () => {
+    if (!callInfo?.callId || !callInfo?.recipientId) {
+      console.warn("No outgoing call to cancel");
+      return;
+    }
+    console.log("Cancelling outgoing call:", callInfo.callId);
+    try {
+      callSocket.cancelCall({
+        callId: callInfo.callId,
+        recipientUserId: callInfo.recipientId,
+      });
+    } catch (err) {
+      console.error("Error sending cancel-call to socket:", err);
+    }
+    webRTCManagerRef.current?.endCall();
+    setCallInfo(null);
+    setCallState("ended");
   };
 
   const endCall = () => {
@@ -485,6 +514,7 @@ export const useWebRTC = () => {
     initiateCall,
     acceptCall,
     rejectCall,
+    cancelCall,
     endCall,
     toggleMute,
     toggleVideo,

@@ -2,9 +2,13 @@
   "expo": {
     "name": "communication-app",
     "slug": "communication-app",
-    "owner": "joy43",
+    "owner": "ssjoy43",
     "extra": {
-      "BASE_URL": "http://localhost:3000"
+      "BASE_URL": "http://localhost:3000",
+      "router": {},
+      "eas": {
+        "projectId": "f8aa592d-358d-4183-ad5f-62a0ddc5d279"
+      }
     },
     "version": "1.0.0",
     "orientation": "portrait",

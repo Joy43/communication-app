@@ -16,6 +16,7 @@ interface CallSocketCallbacks {
   }) => void;
   onCallActive?: (data: { callId: string }) => void;
   onCallDeclined?: (data: { callId: string }) => void;
+  onCallCancelled?: (data: { callId: string }) => void; // New: Handle caller cancelling before recipient accepts
   onCallEnded?: (data: { callId: string }) => void;
   onWebRTCOffer?: (data: { roomId: string; offer: any }) => void;
   onWebRTCAnswer?: (data: { roomId: string; answer: any }) => void;
@@ -48,7 +49,7 @@ export const useCallSocket = (callbacks?: CallSocketCallbacks) => {
 
     if (!token) {
       console.warn(
-        "useCallSocket: No token available for call socket connection"
+        "useCallSocket: No token available for call socket connection",
       );
       return;
     }
@@ -60,7 +61,7 @@ export const useCallSocket = (callbacks?: CallSocketCallbacks) => {
 
     console.log(
       "useCallSocket: Initializing call socket connection for user:",
-      currentUser.id
+      currentUser.id,
     );
 
     // Initialize socket connection to /call namespace
@@ -80,7 +81,7 @@ export const useCallSocket = (callbacks?: CallSocketCallbacks) => {
     });
 
     console.log(
-      "useCallSocket: Socket instance created, waiting for connection..."
+      "useCallSocket: Socket instance created, waiting for connection...",
     );
     socketRef.current = socket;
 
@@ -104,7 +105,7 @@ export const useCallSocket = (callbacks?: CallSocketCallbacks) => {
       // Notify about disconnection during active call
       if (hasActiveCallRef.current) {
         console.error(
-          "useCallSocket: ⚠️ Socket disconnected during active call!"
+          "useCallSocket: ⚠️ Socket disconnected during active call!",
         );
         callbacksRef.current?.onSocketDisconnected?.(reason);
       }
@@ -119,7 +120,7 @@ export const useCallSocket = (callbacks?: CallSocketCallbacks) => {
       console.log(
         "useCallSocket: 🔄 Reconnected after",
         attemptNumber,
-        "attempts"
+        "attempts",
       );
       setError(null);
 
@@ -142,7 +143,7 @@ export const useCallSocket = (callbacks?: CallSocketCallbacks) => {
     socket.on("connect_error", (err) => {
       console.error(
         "useCallSocket: ❌ Call socket connection error:",
-        err.message
+        err.message,
       );
       setError(err.message);
       setIsConnected(false);
@@ -154,7 +155,7 @@ export const useCallSocket = (callbacks?: CallSocketCallbacks) => {
       (data: { callId: string; from: string; title?: string }) => {
         console.log("useCallSocket: 📞 Incoming call event received:", data);
         callbacksRef.current?.onIncomingCall?.(data);
-      }
+      },
     );
 
     socket.on(
@@ -162,7 +163,7 @@ export const useCallSocket = (callbacks?: CallSocketCallbacks) => {
       (data: { callId: string; to: string; title?: string }) => {
         console.log("Call started:", data);
         callbacksRef.current?.onCallStarted?.(data);
-      }
+      },
     );
 
     socket.on("call-active", (data: { callId: string }) => {
@@ -172,11 +173,19 @@ export const useCallSocket = (callbacks?: CallSocketCallbacks) => {
 
     socket.on("call-declined", (data: { callId: string }) => {
       console.log("Call declined:", data);
+      hasActiveCallRef.current = false; // Mark call as no longer active
       callbacksRef.current?.onCallDeclined?.(data);
+    });
+
+    socket.on("call-cancelled", (data: { callId: string }) => {
+      console.log("📞 Call cancelled by remote peer:", data);
+      hasActiveCallRef.current = false; // Mark call as no longer active
+      callbacksRef.current?.onCallCancelled?.(data);
     });
 
     socket.on("call-ended", (data: { callId: string }) => {
       console.log("Call ended:", data);
+      hasActiveCallRef.current = false; // Mark call as no longer active
       callbacksRef.current?.onCallEnded?.(data);
     });
 
@@ -219,6 +228,7 @@ export const useCallSocket = (callbacks?: CallSocketCallbacks) => {
       socket.off("call-started");
       socket.off("call-active");
       socket.off("call-declined");
+      socket.off("call-cancelled");
       socket.off("call-ended");
       socket.off("webrtc-offer");
       socket.off("webrtc-answer");
@@ -241,6 +251,16 @@ export const useCallSocket = (callbacks?: CallSocketCallbacks) => {
     console.log("Emitting start-call:", data);
     hasActiveCallRef.current = true;
     socketRef.current.emit("start-call", data);
+  };
+
+  const cancelCall = (data: { callId: string; recipientUserId: string }) => {
+    if (!socketRef.current?.connected) {
+      console.error("Socket not connected");
+      throw new Error("Socket not connected");
+    }
+    console.log("Emitting cancel-call:", data);
+    hasActiveCallRef.current = false;
+    socketRef.current.emit("cancel-call", data);
   };
 
   const acceptCall = (data: { callId: string; callerId: string }) => {
@@ -332,6 +352,7 @@ export const useCallSocket = (callbacks?: CallSocketCallbacks) => {
     currentUserId: currentUser?.id,
     // Call actions
     startCall,
+    cancelCall,
     acceptCall,
     declineCall,
     endCall,

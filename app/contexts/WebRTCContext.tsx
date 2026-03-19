@@ -30,10 +30,11 @@ interface WebRTCContextType {
   initiateCall: (
     recipientUserId: string,
     type: CallType,
-    title?: string
+    title?: string,
   ) => Promise<void>;
   acceptCall: () => Promise<void>;
   rejectCall: () => void;
+  cancelCall: () => void;
   endCall: () => void;
   toggleMute: () => void;
   toggleVideo: () => void;
@@ -65,7 +66,7 @@ export const WebRTCProvider = ({ children }: WebRTCProviderProps) => {
   React.useEffect(() => {
     console.log(
       "WebRTCProvider: Socket connected:",
-      webRTCValues.isSocketConnected
+      webRTCValues.isSocketConnected,
     );
   }, [webRTCValues.isSocketConnected]);
 

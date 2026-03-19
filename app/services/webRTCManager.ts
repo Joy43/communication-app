@@ -51,6 +51,7 @@ export class WebRTCManager {
   private state: CallState = "idle";
   private iceCandidatesQueue: RTCIceCandidateInit[] = [];
   private pendingOffer: { roomId: string; offer: any } | null = null;
+  private localStreamIds: Set<string> = new Set(); // Track local stream IDs to distinguish from remote
 
   private onStateChange: (state: CallState) => void;
   private onRemoteStream: (stream: MediaStream) => void;
@@ -512,6 +513,16 @@ export class WebRTCManager {
       };
 
       this.localStream = await mediaDevices.getUserMedia(constraints);
+
+      // Track local stream IDs to distinguish from remote streams
+      if (this.localStream) {
+        this.localStreamIds.add(this.localStream.id);
+        console.log(
+          "📹 Local stream IDs tracked:",
+          Array.from(this.localStreamIds),
+        );
+      }
+
       this.onLocalStream(this.localStream);
 
       console.log("Local media setup complete");
@@ -581,18 +592,32 @@ export class WebRTCManager {
 
       // @ts-ignore - react-native-webrtc event handlers
       this.peerConnection.ontrack = (event: any) => {
-        console.log("📥 Received remote track:", {
+        console.log("📥 Received track event:", {
           kind: event.track.kind,
           enabled: event.track.enabled,
           readyState: event.track.readyState,
           hasStreams: !!(event.streams && event.streams[0]),
           streamsCount: event.streams?.length || 0,
+          streamId: event.streams?.[0]?.id,
+          isLocalStream: event.streams?.[0]
+            ? this.localStreamIds.has(event.streams[0].id)
+            : false,
         });
 
+        // IMPORTANT: Filter out local streams - only accept remote streams
         if (event.streams && event.streams[0]) {
+          const streamId = event.streams[0].id;
+
+          // Check if this is a local stream (already tracked)
+          if (this.localStreamIds.has(streamId)) {
+            console.log("📹 Ignoring local stream in ontrack event:", streamId);
+            return;
+          }
+
+          // This is the remote stream
           this.remoteStream = event.streams[0];
           if (this.remoteStream) {
-            console.log("📥 Remote stream set:", {
+            console.log("📥 Remote stream successfully assigned:", {
               audioTracks: this.remoteStream.getAudioTracks().length,
               videoTracks: this.remoteStream.getVideoTracks().length,
               id: this.remoteStream.id,
@@ -639,7 +664,7 @@ export class WebRTCManager {
     if (this.localStream) {
       this.localStream.getTracks().forEach((track) => {
         track.stop();
-        console.log("Stopped track:", track.kind);
+        console.log("Stopped local track:", track.kind);
       });
       this.localStream = null;
     }
@@ -650,6 +675,7 @@ export class WebRTCManager {
     }
 
     this.remoteStream = null;
+    this.localStreamIds.clear(); // Clear tracked local stream IDs
     this.callId = null;
     this.remoteUserId = null;
     this.iceCandidatesQueue = [];
