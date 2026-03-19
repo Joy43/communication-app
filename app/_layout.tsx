@@ -3,7 +3,6 @@ import { ActivityIndicator, SafeAreaView, View } from "react-native";
 import Toast from "react-native-toast-message";
 import { Provider } from "react-redux";
 import { PersistGate } from "redux-persist/integration/react";
-
 import { StatusBar } from "expo-status-bar";
 import { Platform } from "react-native";
 import { IncomingCallModal } from "./components/IncomingCallModal";
@@ -56,7 +55,7 @@ export default function RootLayout() {
               <Toast />
             </View>
 
-            {/* Global Incoming Call Modal - renders on top of all screens */}
+            {/*--- ------ Global Incoming Call -------------- */}
             <IncomingCallModal />
           </SafeAreaView>
         </WebRTCProvider>
