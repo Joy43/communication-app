@@ -198,41 +198,86 @@ export default function CallScreen() {
       <SafeAreaView className="flex-1 bg-[#1a1a1a]">
         {/* Remote Video (Full Screen) OR Placeholder */}
         {remoteStream && isVideoCall ? (
-          <RTCView
-            streamURL={remoteStream.toURL()}
-            style={{ width, height }}
-            objectFit="cover"
-            className="bg-black"
-          />
+          <View style={{ width, height }} className="bg-black">
+            <RTCView
+              streamURL={remoteStream.toURL()}
+              style={{ width, height }}
+              objectFit="cover"
+            />
+
+            {/* subtle dark overlay for premium look */}
+            <View
+              pointerEvents="none"
+              className="absolute left-0 right-0 top-0 bottom-0"
+              style={{ backgroundColor: "rgba(0,0,0,0.22)" }}
+            />
+
+            {/* soft bottom gradient to make controls pop */}
+            <View
+              pointerEvents="none"
+              className="absolute left-0 right-0"
+              style={{
+                height: 220,
+                bottom: 0,
+                backgroundColor: "transparent",
+                shadowColor: "#000",
+                shadowOffset: { width: 0, height: -8 },
+                shadowOpacity: 0.3,
+                shadowRadius: 20,
+              }}
+            />
+          </View>
         ) : (
           <View
             style={{ width, height }}
-            className="bg-[#2a2a2a] justify-center items-center"
+            className="bg-gradient-to-b from-[#1a1a1a] to-[#111111] justify-center items-center"
           >
-            <View className="w-30 h-30 rounded-full bg-blue-500 justify-center items-center mb-5">
-              <Text className="text-white text-5xl font-semibold">
+            <View className="w-36 h-36 rounded-full bg-gradient-to-br from-[#4f46e5] to-[#06b6d4] justify-center items-center mb-4 shadow-lg border-2 border-white/10">
+              <Text className="text-white text-6xl font-extrabold">
                 {receiverAvatar}
               </Text>
             </View>
-            <Text className="text-white text-3xl font-semibold mb-2">
+
+            <Text className="text-white text-3xl font-bold mb-1">
               {receiverName}
             </Text>
-            <Text className="text-white/70 text-lg">{getCallStateText()}</Text>
+            <Text className="text-white/70 text-base mb-2">
+              {getCallStateText()}
+            </Text>
+
+            <View className="flex-row items-center space-x-2 mt-2">
+              <View className="bg-white/10 px-3 py-1 rounded-full">
+                <Text className="text-white text-sm">Premium</Text>
+              </View>
+              {isVideoCall && (
+                <View className="bg-blue-500/30 px-3 py-1 rounded-full">
+                  <Video size={14} color="#fff" />
+                </View>
+              )}
+            </View>
           </View>
         )}
 
         {/* Local Video (Picture in Picture) - ALWAYS SHOW IF AVAILABLE */}
         {localStream && isVideoCall ? (
-          <View className="absolute top-[60px] right-5 w-[120px] h-[160px] rounded-xl overflow-hidden border-2 border-white shadow-lg">
-            <RTCView
-              streamURL={localStream.toURL()}
-              style={{ width: "100%", height: "100%" }}
-              objectFit="cover"
-              mirror={true}
-            />
-            {/* Video status indicator */}
-            <View className="absolute bottom-2 left-2 bg-black/50 px-2 py-1 rounded-full">
-              <Text className="text-white text-xs font-semibold">You</Text>
+          <View
+            className="absolute"
+            style={{ top: 60, right: 16, width: 140, height: 190 }}
+          >
+            <View
+              className="w-full h-full rounded-2xl overflow-hidden border-2 border-white/10 shadow-2xl transform"
+              style={{ elevation: 12 }}
+            >
+              <RTCView
+                streamURL={localStream.toURL()}
+                style={{ width: "100%", height: "100%" }}
+                objectFit="cover"
+                mirror={true}
+              />
+              {/* You badge */}
+              <View className="absolute bottom-3 left-3 bg-black/50 px-3 py-1 rounded-full">
+                <Text className="text-white text-xs font-semibold">You</Text>
+              </View>
             </View>
           </View>
         ) : null}
@@ -243,76 +288,82 @@ export default function CallScreen() {
           style={{
             top:
               Platform.OS === "android"
-                ? (StatusBar.currentHeight || 0) + 20
-                : 60,
+                ? (StatusBar.currentHeight || 0) + 18
+                : 50,
           }}
         >
-          <Text className="text-white text-2xl font-semibold mb-1">
+          <Text className="text-white text-2xl font-extrabold mb-1">
             {receiverName}
           </Text>
-          <Text className="text-white/80 text-base">
+          <Text className="text-white/80 text-sm">
             {callState === "connected" ? getCallDuration() : getCallStateText()}
           </Text>
-          {isVideoCall && (
-            <View className="flex-row items-center bg-blue-500/30 px-3 py-1 rounded-xl mt-2">
-              <Video size={14} color="#fff" />
-              <Text className="text-white text-xs font-medium ml-1">
-                Video Call
-              </Text>
+
+          <View className="flex-row items-center mt-3 space-x-2">
+            <View className="bg-white/6 px-3 py-1 rounded-full">
+              <Text className="text-white text-xs">High Quality</Text>
             </View>
-          )}
+            {isVideoCall && (
+              <View className="flex-row items-center bg-blue-500/30 px-3 py-1 rounded-full">
+                <Video size={14} color="#fff" />
+                <Text className="text-white text-xs font-medium ml-2">
+                  Video
+                </Text>
+              </View>
+            )}
+          </View>
         </View>
 
         {/* Controls */}
-        <View className="absolute bottom-12 left-0 right-0 items-center">
-          {/* Switch Camera Button (only for video calls) */}
+        <View className="absolute left-4 right-4 bottom-8">
+          {/* floating switch camera top of control bar */}
           {localStream && isVideoCall && !isVideoOff && (
             <TouchableOpacity
-              className="absolute -top-20 w-12 h-12 rounded-full bg-white/20 justify-center items-center"
+              className="absolute -top-14 right-6 w-12 h-12 rounded-full bg-white/8 justify-center items-center shadow-lg"
               onPress={switchCamera}
-              activeOpacity={0.8}
+              activeOpacity={0.85}
             >
-              <SwitchCamera size={24} color="#fff" />
+              <SwitchCamera size={20} color="#fff" />
             </TouchableOpacity>
           )}
 
-          <View className="flex-row justify-center items-center gap-5">
-            {/* Mute Button */}
+          {/* frosted control pill */}
+          <View
+            className="w-full rounded-3xl bg-white/6 px-4 py-3 flex-row justify-between items-center shadow-2xl"
+            style={{ alignItems: "center" }}
+          >
             <TouchableOpacity
-              className={`w-15 h-15 rounded-full justify-center items-center ${
-                isMuted ? "bg-red-500/80" : "bg-white/20"
-              }`}
+              className={`w-14 h-14 rounded-full justify-center items-center ${isMuted ? "bg-red-500/90" : "bg-white/10"}`}
               onPress={toggleMute}
-              activeOpacity={0.8}
+              activeOpacity={0.85}
             >
               {isMuted ? (
-                <MicOff size={28} color="#fff" />
+                <MicOff size={22} color="#fff" />
               ) : (
-                <Mic size={28} color="#fff" />
+                <Mic size={22} color="#fff" />
               )}
             </TouchableOpacity>
 
-            {/* End Call Button */}
-            <TouchableOpacity
-              className="w-[70px] h-[70px] rounded-full bg-red-500 justify-center items-center"
-              onPress={handleEndCall}
-              activeOpacity={0.8}
-            >
-              <PhoneOff size={32} color="#fff" />
-            </TouchableOpacity>
+            <View className="items-center">
+              <TouchableOpacity
+                className="w-20 h-20 rounded-full bg-red-500 justify-center items-center shadow-lg"
+                onPress={handleEndCall}
+                activeOpacity={0.85}
+              >
+                <PhoneOff size={28} color="#fff" />
+              </TouchableOpacity>
+              <Text className="text-white text-xs mt-2">End</Text>
+            </View>
 
-            {/* Video Toggle Button */}
             <TouchableOpacity
-              className={`w-15 h-15 rounded-full justify-center items-center ${
-                isVideoOff ? "bg-red-500/80" : "bg-white/20"
-              }`}
+              className={`w-14 h-14 rounded-full justify-center items-center ${isVideoOff ? "bg-red-500/90" : "bg-white/10"}`}
               onPress={handleVideoToggle}
-              activeOpacity={0.8}
+              activeOpacity={0.85}
             >
               {isVideoOff ? (
-                <VideoOff size={28} color="#fff" />
+                <VideoOff size={22} color="#fff" />
               ) : (
-                <Video size={28} color="#fff" />
+                <Video size={22} color="#fff" />
               )}
             </TouchableOpacity>
           </View>

@@ -31,7 +31,7 @@ export default {
         "ACCESS_NETWORK_STATE",
       ],
       adaptiveIcon: {
-        foregroundImage: "./assets/images/android-icon-foreground.png",
+        foregroundImage: "./assets/images/communica-screen.png",
         backgroundColor: "#E6F4FE",
       },
       edgeToEdgeEnabled: true,
@@ -41,7 +41,7 @@ export default {
     web: {
       bundler: "metro",
       output: "static",
-      favicon: "./assets/images/favicon.png",
+      favicon: "./assets/images/icon.png",
     },
 
     plugins: [
@@ -49,7 +49,7 @@ export default {
       [
         "expo-splash-screen",
         {
-          image: "./assets/images/splash-icon.png",
+          image: "./assets/images/communica-screen.png",
           imageWidth: 200,
           resizeMode: "contain",
           backgroundColor: "#ffffff",
