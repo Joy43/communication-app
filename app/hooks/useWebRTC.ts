@@ -4,6 +4,7 @@ import { MediaStream } from "react-native-webrtc";
 import { selectaccessToken, selectUser } from "../redux/auth/auth.slice";
 import { useAppSelector } from "../redux/hook";
 import { CallState, CallType, WebRTCManager } from "../services/webRTCManager";
+import { ringtoneManager } from "../services/ringtoneManager";
 import { Call } from "../types/chat.type";
 import { useCallSocket } from "./useCallSocket";
 
@@ -51,6 +52,11 @@ export const useWebRTC = () => {
       };
       console.log("useWebRTC: Setting incoming call state:", incomingCallData);
       setIncomingCall(incomingCallData);
+
+      // 🔊 Start ringtone when call arrives
+      console.log("useWebRTC: 🔊 Starting ringtone...");
+      await ringtoneManager.playRingtone();
+
       if (webRTCManagerRef.current && currentUserId) {
         try {
           console.log("useWebRTC: Preparing WebRTC manager for incoming call");
@@ -134,6 +140,8 @@ export const useWebRTC = () => {
     },
     onCallDeclined: (data) => {
       console.log("Call declined:", data);
+      console.log("🔊 Stopping ringtone (call declined)");
+      ringtoneManager.stopRingtone();
       setCallState("ended");
       setError(new Error("Call was declined"));
       setIncomingCall(null);
@@ -142,6 +150,8 @@ export const useWebRTC = () => {
     onCallCancelled: (data) => {
       console.log("📞 Incoming call was cancelled by caller:", data);
       // When caller cancels, receiver's incoming call should be cleared immediately
+      console.log("🔊 Stopping ringtone (call cancelled)");
+      ringtoneManager.stopRingtone();
       setCallState("ended");
       setIncomingCall(null);
       setError(null);
@@ -149,6 +159,8 @@ export const useWebRTC = () => {
     },
     onCallEnded: (data) => {
       console.log("Call ended:", data);
+      console.log("🔊 Stopping ringtone (call ended)");
+      ringtoneManager.stopRingtone();
       setCallState("ended");
       setIncomingCall(null);
       setCallInfo(null);

@@ -51,7 +51,6 @@ export class WebRTCManager {
   private state: CallState = "idle";
   private iceCandidatesQueue: RTCIceCandidateInit[] = [];
   private pendingOffer: { roomId: string; offer: any } | null = null;
-  private localStreamIds: Set<string> = new Set(); // Track local stream IDs to distinguish from remote
 
   private onStateChange: (state: CallState) => void;
   private onRemoteStream: (stream: MediaStream) => void;
@@ -255,6 +254,7 @@ export class WebRTCManager {
       await this.peerConnection.setRemoteDescription(offer);
       console.log("✅ Remote description set successfully");
 
+      // Process ICE candidates BEFORE creating answer
       console.log("Processing queued ICE candidates...");
       await this.processQueuedIceCandidates();
 
@@ -277,7 +277,7 @@ export class WebRTCManager {
       const answer = await this.peerConnection.createAnswer();
       console.log("✅ Answer created successfully");
 
-      console.log("Setting local description...");
+      console.log("Setting local description (answer)...");
       await this.peerConnection.setLocalDescription(answer);
       console.log("✅ Local description set successfully");
 
@@ -289,10 +289,8 @@ export class WebRTCManager {
         callerId: this.remoteUserId!,
       });
 
-      console.log(
-        "✅ WebRTC negotiation complete - setting state to connected",
-      );
-      this.setState("connected");
+      console.log("✅ WebRTC negotiation complete - waiting for connection");
+      this.setState("connecting");
     } catch (error) {
       console.error("❌ Error handling offer:", error);
       this.onError(error as Error);
@@ -514,15 +512,6 @@ export class WebRTCManager {
 
       this.localStream = await mediaDevices.getUserMedia(constraints);
 
-      // Track local stream IDs to distinguish from remote streams
-      if (this.localStream) {
-        this.localStreamIds.add(this.localStream.id);
-        console.log(
-          "📹 Local stream IDs tracked:",
-          Array.from(this.localStreamIds),
-        );
-      }
-
       this.onLocalStream(this.localStream);
 
       console.log("Local media setup complete");
@@ -592,44 +581,68 @@ export class WebRTCManager {
 
       // @ts-ignore - react-native-webrtc event handlers
       this.peerConnection.ontrack = (event: any) => {
-        console.log("📥 Received track event:", {
+        console.log("📥 ===== ONTRACK EVENT RECEIVED =====");
+        console.log("📥 Track event details:", {
           kind: event.track.kind,
           enabled: event.track.enabled,
           readyState: event.track.readyState,
           hasStreams: !!(event.streams && event.streams[0]),
           streamsCount: event.streams?.length || 0,
           streamId: event.streams?.[0]?.id,
-          isLocalStream: event.streams?.[0]
-            ? this.localStreamIds.has(event.streams[0].id)
-            : false,
+          trackId: event.track.id,
+          timestamp: new Date().toISOString(),
         });
 
-        // IMPORTANT: Filter out local streams - only accept remote streams
-        if (event.streams && event.streams[0]) {
-          const streamId = event.streams[0].id;
+        // Ensure we handle the remote stream
+        if (event.streams && event.streams.length > 0) {
+          const stream = event.streams[0];
 
-          // Check if this is a local stream (already tracked)
-          if (this.localStreamIds.has(streamId)) {
-            console.log("📹 Ignoring local stream in ontrack event:", streamId);
-            return;
+          console.log("📥 Stream exists, processing...", {
+            streamId: stream.id,
+            audioTracks: stream.getAudioTracks().length,
+            videoTracks: stream.getVideoTracks().length,
+          });
+
+          // Create remote stream if it doesn't exist
+          if (!this.remoteStream) {
+            this.remoteStream = stream;
           }
 
-          // This is the remote stream
-          this.remoteStream = event.streams[0];
+          // Now remote stream should always exist
           if (this.remoteStream) {
-            console.log("📥 Remote stream successfully assigned:", {
+            console.log("📥 Remote stream ready:", {
+              id: this.remoteStream.id,
               audioTracks: this.remoteStream.getAudioTracks().length,
               videoTracks: this.remoteStream.getVideoTracks().length,
-              id: this.remoteStream.id,
             });
+
+            // Add track to remote stream if not already present
+            const trackAlreadyExists = this.remoteStream
+              .getTracks()
+              .some((t) => t.id === event.track.id);
+
+            if (!trackAlreadyExists) {
+              console.log("📥 Adding new track to remote stream:", {
+                trackKind: event.track.kind,
+                trackId: event.track.id,
+              });
+              this.remoteStream.addTrack(event.track);
+            }
+
+            // Always callback with the remote stream
+            console.log("📥 Calling onRemoteStream with remote stream");
             this.onRemoteStream(this.remoteStream);
           }
-        } else {
-          console.warn("⚠️ No streams in track event!");
-        }
-      };
 
-      // @ts-ignore - react-native-webrtc event handlers
+          console.log("📥 ===== ONTRACK COMPLETE =====");
+        } else {
+          console.warn("⚠️ No streams in track event! This is unusual.", {
+            track: event.track,
+            hasStreamsArray: !!event.streams,
+            timestamp: new Date().toISOString(),
+          });
+        }
+      }; // @ts-ignore - react-native-webrtc event handlers
       this.peerConnection.onconnectionstatechange = () => {
         const state = this.peerConnection?.connectionState;
         console.log("Connection state changed:", state);
@@ -675,7 +688,6 @@ export class WebRTCManager {
     }
 
     this.remoteStream = null;
-    this.localStreamIds.clear(); // Clear tracked local stream IDs
     this.callId = null;
     this.remoteUserId = null;
     this.iceCandidatesQueue = [];

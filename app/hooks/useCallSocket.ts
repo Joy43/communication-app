@@ -16,7 +16,7 @@ interface CallSocketCallbacks {
   }) => void;
   onCallActive?: (data: { callId: string }) => void;
   onCallDeclined?: (data: { callId: string }) => void;
-  onCallCancelled?: (data: { callId: string }) => void; // New: Handle caller cancelling before recipient accepts
+  onCallCancelled?: (data: { callId: string }) => void; 
   onCallEnded?: (data: { callId: string }) => void;
   onWebRTCOffer?: (data: { roomId: string; offer: any }) => void;
   onWebRTCAnswer?: (data: { roomId: string; answer: any }) => void;
@@ -65,7 +65,7 @@ export const useCallSocket = (callbacks?: CallSocketCallbacks) => {
     );
 
     // Initialize socket connection to /call namespace
-    const baseUrl = "https://communication-app-server.onrender.com";
+    const baseUrl = process.env.EXPO_PUBLIC_BASE_API || "https://actorly-odourless-lavinia.ngrok-free.dev";
     console.log("useCallSocket: Call socket connecting to:", `${baseUrl}/call`);
     const socket = io(`${baseUrl}/call`, {
       auth: { token },
