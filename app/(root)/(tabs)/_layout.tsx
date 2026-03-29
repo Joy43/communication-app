@@ -1,6 +1,5 @@
 import { Tabs } from "expo-router";
 import { HomeIcon, MessageCircle, User2, Users } from "lucide-react-native";
-import React from "react";
 import { Platform, useColorScheme } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -68,8 +67,9 @@ export default function TabLayout() {
         tabBarActiveBackgroundColor: theme.activeBackground,
       }}
     >
-    // home tabBar icon is a house, but we will use the message circle icon for now
-    <Tabs.Screen
+      // home tabBar icon is a house, but we will use the message circle icon
+      for now
+      <Tabs.Screen
         name="home"
         options={{
           title: "Home",
@@ -81,6 +81,12 @@ export default function TabLayout() {
               strokeWidth={focused ? 2.5 : 2}
             />
           ),
+        }}
+      />
+      <Tabs.Screen
+        name="posts"
+        options={{
+          href: null,
         }}
       />
       <Tabs.Screen
@@ -115,8 +121,6 @@ export default function TabLayout() {
           ),
         }}
       />
-
-     
     </Tabs>
   );
 }
