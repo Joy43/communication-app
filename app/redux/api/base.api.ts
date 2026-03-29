@@ -50,6 +50,7 @@ export const baseAPI = createApi({
     "podcast",
     "report",
     "community",
+    "getProfile",
   ],
   endpoints: () => ({}),
 });

@@ -1,26 +1,30 @@
+import { get } from "node:http";
 import { baseAPI } from "../../api/base.api";
 
 
 
 export const userAPI = baseAPI.injectEndpoints({
+  // -----create profile for contributor application------
   endpoints: (build) => ({
-    createApplicationForContributor: build.mutation({
+    updateProfileUser: build.mutation({
       query: (data) => ({
-        url: `/user/apply-contributor`,
-        method: "POST",
+        url: `/profile/update-profile`,
+        method: "PATCH",
         body: data,
       }),
     }),
 
-    getPendingContributorsRequest: build.query({
+    getUserProfile: build.query({
       query: () => ({
-        url: `/admin-management/contributor/all`,
+        url: `/auth/profile`,
         method: "GET",
       }),
-      providesTags: ["contributor"],
+      providesTags: ["getProfile"],
     }),
-    updateContributorRequestStatus: build.mutation({
-      query: ({ status, id }) => ({
+
+    // ------- update profile --------
+    updateStatusUserProfile: build.mutation({
+      query: ({  id }) => ({
         url: `/admin-management/contributor/${id}/status`,
         method: "PATCH",
         body: { status },
@@ -36,13 +40,13 @@ export const userAPI = baseAPI.injectEndpoints({
         body: { reviewAlerts: status },
       }),
     }),
-    //  end
+
   }),
 });
 
 export const {
-  useCreateApplicationForContributorMutation,
-  useGetPendingContributorsRequestQuery,
-  useUpdateContributorRequestStatusMutation,
+  useUpdateProfileUserMutation,
+  useGetUserProfileQuery,
+  useUpdateStatusUserProfileMutation,
   useChangeReviewToggleMutation,
 } = userAPI;
