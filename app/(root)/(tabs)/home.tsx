@@ -1,14 +1,14 @@
-import { useFocusEffect, useRouter } from "expo-router";
-import { useCallback } from "react";
+import { useRouter } from "expo-router";
+import PostsScreen from "../../(posts)/PostsScreen";
 
 export default function Homepage() {
   const router = useRouter();
 
-  useFocusEffect(
-    useCallback(() => {
-      router.replace("/posts/all-posts");
-    }, [router]),
+  return (
+    <PostsScreen
+      title="All Posts"
+      activeTabId="1"
+      filterFn={(posts: any) => posts}
+    />
   );
-
-  return null;
 }

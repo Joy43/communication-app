@@ -1,4 +1,4 @@
-import { get } from "node:http";
+
 import { baseAPI } from "../../api/base.api";
 
 
@@ -13,7 +13,7 @@ export const userAPI = baseAPI.injectEndpoints({
         body: data,
       }),
     }),
-
+//------ get user profile------
     getUserProfile: build.query({
       query: () => ({
         url: `/auth/profile`,
@@ -23,14 +23,14 @@ export const userAPI = baseAPI.injectEndpoints({
     }),
 
     // ------- update profile --------
-    updateStatusUserProfile: build.mutation({
-      query: ({  id }) => ({
-        url: `/admin-management/contributor/${id}/status`,
-        method: "PATCH",
-        body: { status },
-      }),
-      invalidatesTags: ["contributor"],
-    }),
+    // updateStatusUserProfile: build.mutation({
+    //   query: ({  id }) => ({
+    //     url: `/admin-management/contributor/${id}/status`,
+    //     method: "PATCH",
+    //     body: { status },
+    //   }),
+    //   invalidatesTags: ["contributor"],
+    // }),
 
     // ---------account setting reviw alert toggle--
     changeReviewToggle: build.mutation({
@@ -47,6 +47,5 @@ export const userAPI = baseAPI.injectEndpoints({
 export const {
   useUpdateProfileUserMutation,
   useGetUserProfileQuery,
-  useUpdateStatusUserProfileMutation,
   useChangeReviewToggleMutation,
 } = userAPI;

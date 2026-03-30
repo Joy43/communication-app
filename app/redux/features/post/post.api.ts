@@ -1,8 +1,5 @@
-import { get } from "node:http";
+
 import { baseAPI } from "../../api/base.api";
-import { userAPI } from "../profile/user.api";
-
-
 
 export const PostAPI = baseAPI.injectEndpoints({
   // -----create profile for contributor application------
@@ -15,7 +12,7 @@ export const PostAPI = baseAPI.injectEndpoints({
       }),
     }),
 
-    getUserProfile: build.query({
+    getPost: build.query({
       query: () => ({
         url: `/auth/profile`,
         method: "GET",
@@ -47,4 +44,5 @@ export const PostAPI = baseAPI.injectEndpoints({
 
 export const {
     useCreatePostMutation,
+    useGetPostQuery,
 } = PostAPI;
