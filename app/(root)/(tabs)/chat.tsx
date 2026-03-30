@@ -4,7 +4,6 @@ import { useGetPrivateChatUsersQuery } from "@/app/redux/features/message/messag
 import { useAppSelector } from "@/app/redux/hook";
 import { useRouter } from "expo-router";
 import { ArrowLeft, Search } from "lucide-react-native";
-import React from "react";
 import {
   ActivityIndicator,
   Image,
@@ -22,11 +21,8 @@ export default function ChatListScreen() {
   const currentUserId = currentUser?.id;
 
   // Fetch all users
-  const {
-    data: chatUsers,
-    isLoading: usersLoading,
-  
-  } = useGetPrivateChatUsersQuery(null);
+  const { data: chatUsers, isLoading: usersLoading } =
+    useGetPrivateChatUsersQuery(null);
 
   // Socket for real-time updates
   const { isConnected, conversations, onlineUsers } = useSocket();
@@ -92,7 +88,7 @@ export default function ChatListScreen() {
                   onPress={() => {
                     // Find conversation with this user
                     const conv = conversations.find(
-                      (c) => c.participant.id === user.id
+                      (c) => c.participant.id === user.id,
                     );
 
                     router.push({
@@ -101,6 +97,7 @@ export default function ChatListScreen() {
                         userId: user.id,
                         userName: user.name,
                         conversationId: conv?.chatId || "",
+                        profilePicture: user.profilePicture,
                       },
                     });
                   }}
@@ -150,6 +147,7 @@ export default function ChatListScreen() {
                       userId: conv.participant.id,
                       userName: conv.participant.name,
                       conversationId: conv.chatId,
+                      profilePicture: conv.participant.profilePicture || "",
                     },
                   });
                 }}

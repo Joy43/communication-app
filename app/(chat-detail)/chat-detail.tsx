@@ -9,10 +9,11 @@ import {
   Send,
   Video,
 } from "lucide-react-native";
-import React, { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   Alert,
   BackHandler,
+  Image,
   Keyboard,
   KeyboardAvoidingView,
   Platform,
@@ -42,7 +43,7 @@ export default function ChatDetailScreen() {
   const scrollViewRef = useRef<ScrollView>(null);
   const typingTimeoutRef = useRef<number | null>(null);
 
-  const { userId, userName, conversationId } = params;
+  const { userId, userName, conversationId, profilePicture } = params;
   const currentUser = useAppSelector(selectUser);
   const currentUserId = currentUser?.id;
 
@@ -87,7 +88,7 @@ export default function ChatDetailScreen() {
       () => {
         handleBackPress();
         return true;
-      }
+      },
     );
 
     return () => backHandler.remove();
@@ -103,7 +104,7 @@ export default function ChatDetailScreen() {
         setTimeout(() => {
           scrollViewRef.current?.scrollToEnd({ animated: true });
         }, 100);
-      }
+      },
     );
 
     const keyboardWillHide = Keyboard.addListener(
@@ -111,7 +112,7 @@ export default function ChatDetailScreen() {
       () => {
         setKeyboardHeight(0);
         setIsKeyboardVisible(false);
-      }
+      },
     );
 
     return () => {
@@ -196,7 +197,7 @@ export default function ChatDetailScreen() {
     if (!isConnected) {
       Alert.alert(
         "Connection Error",
-        "Socket is not connected. Please try again."
+        "Socket is not connected. Please try again.",
       );
       return;
     }
@@ -235,7 +236,7 @@ export default function ChatDetailScreen() {
     if (!isConnected) {
       Alert.alert(
         "Connection Error",
-        "Socket is not connected. Please try again."
+        "Socket is not connected. Please try again.",
       );
       return;
     }
@@ -257,6 +258,7 @@ export default function ChatDetailScreen() {
           userName: userName,
           userId: userId,
           conversationId: conversationId,
+          profilePicture: profilePicture,
         },
       });
     } catch (error) {
@@ -300,10 +302,25 @@ export default function ChatDetailScreen() {
                 >
                   <ArrowLeft size={24} color="#000" />
                 </TouchableOpacity>
-                <View className="w-10 h-10 rounded-full bg-blue-500 items-center justify-center mx-3">
-                  <Text className="text-white text-lg font-semibold">
-                    {(userName as string)?.charAt(0).toUpperCase()}
-                  </Text>
+                <View className="w-10 h-10 rounded-full bg-blue-500 items-center justify-center mx-3 overflow-hidden">
+                  {profilePicture &&
+                  typeof profilePicture === "string" &&
+                  profilePicture.length > 0 ? (
+                    <Image
+                      source={{ uri: profilePicture }}
+                      className="w-full h-full"
+                      style={{ width: 40, height: 40 }}
+                      onError={() =>
+                        console.log("Failed to load image:", profilePicture)
+                      }
+                    />
+                  ) : (
+                    <Text className="text-white text-lg font-semibold">
+                      {typeof userName === "string"
+                        ? userName.charAt(0).toUpperCase()
+                        : ""}
+                    </Text>
+                  )}
                 </View>
                 <View>
                   <Text className="text-base font-semibold">{userName}</Text>
@@ -315,8 +332,8 @@ export default function ChatDetailScreen() {
                       {isRecipientTyping
                         ? "Typing..."
                         : isRecipientOnline
-                        ? "Online"
-                        : "Offline"}
+                          ? "Online"
+                          : "Offline"}
                     </Text>
                   </View>
                 </View>
@@ -390,7 +407,7 @@ export default function ChatDetailScreen() {
                 index === 0 ||
                 new Date(msg.createdAt).toDateString() !==
                   new Date(
-                    conversationMessages[index - 1].createdAt
+                    conversationMessages[index - 1].createdAt,
                   ).toDateString();
 
               return (
@@ -486,7 +503,7 @@ export default function ChatDetailScreen() {
                     // Handle voice recording
                     Alert.alert(
                       "Voice Message",
-                      "Voice recording feature coming soon!"
+                      "Voice recording feature coming soon!",
                     );
                   }}
                 >

@@ -8,9 +8,10 @@ import {
   Video,
   VideoOff,
 } from "lucide-react-native";
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Dimensions,
+  Image,
   Platform,
   SafeAreaView,
   StatusBar,
@@ -44,6 +45,7 @@ export default function CallScreen() {
   // Get receiver info from params or callInfo
   const [receiverName, setReceiverName] = useState<string>("User");
   const [receiverAvatar, setReceiverAvatar] = useState<string>("U");
+  const [profilePictureUrl, setProfilePictureUrl] = useState<string>("");
   const [callDuration, setCallDuration] = useState<string>("");
 
   // Determine if video call - check multiple sources
@@ -114,7 +116,20 @@ export default function CallScreen() {
     // Try to get receiver info from params first
     if (params.userName) {
       setReceiverName(params.userName as string);
-      setReceiverAvatar((params.userName as string).charAt(0).toUpperCase());
+      const profilePic = params.profilePicture as string;
+      if (
+        profilePic &&
+        typeof profilePic === "string" &&
+        profilePic.length > 0
+      ) {
+        setProfilePictureUrl(profilePic);
+      } else {
+        setReceiverAvatar(
+          typeof params.userName === "string"
+            ? (params.userName as string).charAt(0).toUpperCase()
+            : "U",
+        );
+      }
     }
     // Then try from callInfo
     else if (callInfo?.recipientName) {
@@ -232,10 +247,25 @@ export default function CallScreen() {
             style={{ width, height }}
             className="bg-gradient-to-b from-[#1a1a1a] to-[#111111] justify-center items-center"
           >
-            <View className="w-36 h-36 rounded-full bg-gradient-to-br from-[#4f46e5] to-[#06b6d4] justify-center items-center mb-4 shadow-lg border-2 border-white/10">
-              <Text className="text-white text-6xl font-extrabold">
-                {receiverAvatar}
-              </Text>
+            <View className="w-36 h-36 rounded-full bg-gradient-to-br from-[#4f46e5] to-[#06b6d4] justify-center items-center mb-4 shadow-lg border-2 border-white/10 overflow-hidden">
+              {profilePictureUrl ? (
+                <Image
+                  source={{ uri: profilePictureUrl }}
+                  style={{ width: 144, height: 144 }}
+                  className="rounded-full"
+                  onError={() => {
+                    console.log(
+                      "Failed to load profile picture:",
+                      profilePictureUrl,
+                    );
+                    setProfilePictureUrl("");
+                  }}
+                />
+              ) : (
+                <Text className="text-white text-6xl font-extrabold">
+                  {receiverAvatar}
+                </Text>
+              )}
             </View>
 
             <Text className="text-white text-3xl font-bold mb-1">

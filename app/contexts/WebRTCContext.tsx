@@ -18,6 +18,7 @@ interface WebRTCContextType {
     callerName: string;
     type: CallType;
     title?: string;
+    callerProfilePicture?: string;
   } | null;
   callInfo: {
     callId?: string;

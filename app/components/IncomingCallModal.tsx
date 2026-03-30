@@ -1,7 +1,8 @@
 import { Phone, PhoneOff, Video } from "lucide-react-native";
-import React, { useEffect } from "react";
+import { useEffect } from "react";
 import {
   Animated,
+  Image,
   Modal,
   StyleSheet,
   Text,
@@ -22,7 +23,7 @@ export const IncomingCallModal = () => {
     if (incomingCall) {
       console.log(
         "IncomingCallModal: Displaying incoming call from",
-        incomingCall.callerName
+        incomingCall.callerName,
       );
       // Start vibration pattern
       Vibration.vibrate([0, 1000, 1000], true);
@@ -40,7 +41,7 @@ export const IncomingCallModal = () => {
             duration: 1000,
             useNativeDriver: true,
           }),
-        ])
+        ]),
       ).start();
 
       return () => {
@@ -62,7 +63,7 @@ export const IncomingCallModal = () => {
 
   console.log(
     "IncomingCallModal render - incomingCall:",
-    incomingCall ? "YES" : "NO"
+    incomingCall ? "YES" : "NO",
   );
 
   if (!incomingCall) return null;
@@ -81,9 +82,24 @@ export const IncomingCallModal = () => {
             <Animated.View
               style={[styles.avatar, { transform: [{ scale: pulseAnim }] }]}
             >
-              <Text style={styles.avatarText}>
-                {incomingCall.callerName.charAt(0).toUpperCase()}
-              </Text>
+              {incomingCall.callerProfilePicture &&
+              typeof incomingCall.callerProfilePicture === "string" &&
+              incomingCall.callerProfilePicture.length > 0 ? (
+                <Image
+                  source={{ uri: incomingCall.callerProfilePicture }}
+                  style={{ width: 100, height: 100, borderRadius: 50 }}
+                  onError={() =>
+                    console.log(
+                      "Failed to load profile picture:",
+                      incomingCall.callerProfilePicture,
+                    )
+                  }
+                />
+              ) : (
+                <Text style={styles.avatarText}>
+                  {incomingCall.callerName.charAt(0).toUpperCase()}
+                </Text>
+              )}
             </Animated.View>
 
             <Text style={styles.callerName}>{incomingCall.callerName}</Text>

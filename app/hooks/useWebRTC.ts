@@ -4,7 +4,7 @@ import { MediaStream } from "react-native-webrtc";
 import { selectaccessToken, selectUser } from "../redux/auth/auth.slice";
 import { useAppSelector } from "../redux/hook";
 import { CallState, CallType, WebRTCManager } from "../services/webRTCManager";
-import { ringtoneManager } from "../services/ringtoneManager";
+
 import { Call } from "../types/chat.type";
 import { useCallSocket } from "./useCallSocket";
 
@@ -31,6 +31,7 @@ export const useWebRTC = () => {
     callerName: string;
     type: CallType;
     title?: string;
+    callerProfilePicture?: string;
   } | null>(null);
   const [callInfo, setCallInfo] = useState<{
     callId?: string;
@@ -49,13 +50,13 @@ export const useWebRTC = () => {
         callerName: data.title || "Unknown User",
         type: "AUDIO" as CallType, // Default to AUDIO, can be updated when offer is received
         title: data.title,
+        callerProfilePicture: data.profilePicture,
       };
       console.log("useWebRTC: Setting incoming call state:", incomingCallData);
       setIncomingCall(incomingCallData);
 
       // 🔊 Start ringtone when call arrives
       console.log("useWebRTC: 🔊 Starting ringtone...");
-      await ringtoneManager.playRingtone();
 
       if (webRTCManagerRef.current && currentUserId) {
         try {
@@ -141,7 +142,7 @@ export const useWebRTC = () => {
     onCallDeclined: (data) => {
       console.log("Call declined:", data);
       console.log("🔊 Stopping ringtone (call declined)");
-      ringtoneManager.stopRingtone();
+
       setCallState("ended");
       setError(new Error("Call was declined"));
       setIncomingCall(null);
@@ -151,7 +152,7 @@ export const useWebRTC = () => {
       console.log("📞 Incoming call was cancelled by caller:", data);
       // When caller cancels, receiver's incoming call should be cleared immediately
       console.log("🔊 Stopping ringtone (call cancelled)");
-      ringtoneManager.stopRingtone();
+
       setCallState("ended");
       setIncomingCall(null);
       setError(null);
@@ -160,7 +161,7 @@ export const useWebRTC = () => {
     onCallEnded: (data) => {
       console.log("Call ended:", data);
       console.log("🔊 Stopping ringtone (call ended)");
-      ringtoneManager.stopRingtone();
+
       setCallState("ended");
       setIncomingCall(null);
       setCallInfo(null);
@@ -203,7 +204,6 @@ export const useWebRTC = () => {
       console.warn(
         "useWebRTC: Socket reconnected, but call signaling may be lost",
       );
-      // Don't automatically end - let timeout handle it
     },
   });
 
@@ -305,7 +305,6 @@ export const useWebRTC = () => {
       setCallType(type);
       setError(null);
 
-      // Only emit the socket event - WebRTC will be initiated after call-started event
       callSocket.startCall({
         hostUserId: currentUserId,
         recipientUserId,
@@ -390,7 +389,6 @@ export const useWebRTC = () => {
       console.error("acceptCall: ❌ Error accepting call:", err);
       setError(err as Error);
       clearConnectionTimeout();
-      // Don't clear incoming call on error so user can try again
     }
   };
 
