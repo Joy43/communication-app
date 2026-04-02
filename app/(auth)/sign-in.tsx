@@ -1,6 +1,6 @@
 import { router } from "expo-router";
 import { Chrome, Eye, EyeOff, Lock, Mail } from "lucide-react-native";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   ActivityIndicator,
   KeyboardAvoidingView,
@@ -16,14 +16,32 @@ import Toast from "react-native-toast-message";
 import { useLoginMutation } from "../redux/auth/auth.api";
 import { setUser } from "../redux/auth/auth.slice";
 import { useAppDispatch } from "../redux/hook";
+import { getFCMToken } from "../services/firebaseMessaging";
 
 export default function SignInScreen() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [fcmToken, setFcmToken] = useState<string | null>(null);
 
   const dispatch = useAppDispatch();
   const [loginUserWithEmail, { isLoading }] = useLoginMutation();
+
+  // Get FCM token on component mount
+  useEffect(() => {
+    const initializeFCM = async () => {
+      try {
+        const token = await getFCMToken();
+        if (token) {
+          setFcmToken(token);
+        }
+      } catch (error) {
+        console.warn("Failed to get FCM token:", error);
+      }
+    };
+
+    initializeFCM();
+  }, []);
 
   const handleSignIn = async () => {
     // Validation
@@ -48,21 +66,71 @@ export default function SignInScreen() {
     }
 
     try {
-      const result = await loginUserWithEmail({
+      // Get FCM token - retry logic to ensure we get it
+      let currentFcmToken = fcmToken;
+
+      // If not in state, try to fetch it
+      if (!currentFcmToken) {
+        console.log("⏳ FCM token not in state, fetching...");
+        try {
+          currentFcmToken = await getFCMToken();
+          if (currentFcmToken) {
+            setFcmToken(currentFcmToken);
+            console.log("✅ FCM token fetched successfully:", currentFcmToken);
+          } else {
+            console.warn("⚠️ getFCMToken returned null/empty");
+          }
+        } catch (error) {
+          console.warn("❌ Failed to get FCM token during login:", error);
+        }
+      } else {
+        console.log("✅ Using FCM token from state:", currentFcmToken);
+      }
+
+      // Always send fcmToken, even if empty string
+      const loginPayload: any = {
         email: email.trim(),
         password,
-      }).unwrap();
+      };
+
+      // Send token if available, otherwise send empty string
+      if (currentFcmToken) {
+        loginPayload.fcmToken = currentFcmToken;
+        console.log("✅ Including FCM token in login");
+      } else {
+        loginPayload.fcmToken = "";
+        console.warn(
+          "⚠️ No FCM token available - proceeding with empty token\n" +
+            "💡 This may be normal if:\n" +
+            "  • Using Expo Go (requires native build for tokens)\n" +
+            "  • Device permissions not granted\n" +
+            "  • Notifications not fully initialized yet",
+        );
+      }
+
+      console.log("📤 Login payload:", {
+        email: loginPayload.email,
+        password: "***",
+        fcmToken: loginPayload.fcmToken || "(empty)",
+      });
+
+      const result = await loginUserWithEmail(loginPayload).unwrap();
 
       // Login successful
       console.log("Login successful:", result.data.user);
-      console.log("Access token:", result.data.token);
+      console.log("Access token:", result.data.token.accessToken);
+      console.log("FCM Token from response:", result.data.user.fcmToken);
 
       // Store user and token in Redux
       dispatch(
         setUser({
-          user: result.data.user,
+          user: {
+            ...result.data.user,
+            role: result.data.user.role as "USER" | "ADMIN" | "SUPER_ADMIN",
+            status: result.data.user.status as "ACTIVE" | "INACTIVE" | "BANNED",
+          },
           accessToken: result.data.token.accessToken,
-        })
+        }),
       );
 
       Toast.show({

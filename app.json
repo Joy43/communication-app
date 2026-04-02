@@ -15,23 +15,31 @@
     "icon": "./assets/images/icon.png",
     "scheme": "communicationapp",
     "userInterfaceStyle": "automatic",
-    "newArchEnabled": true,
+
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.anonymous.communicationapp",
+      "googleServicesFile": "./GoogleService-Info.plist",
       "infoPlist": {
         "NSCameraUsageDescription": "Camera access is required for video calls",
-        "NSMicrophoneUsageDescription": "Microphone access is required for voice calls"
+        "NSMicrophoneUsageDescription": "Microphone access is required for voice calls",
+        "UIUserInterfaceStyle": "Automatic"
+      },
+      "entitlements": {
+        "aps-environment": "production"
       }
     },
+
     "android": {
       "package": "com.anonymous.communicationapp",
+      "googleServicesFile": "./google-services.json",
       "permissions": [
         "CAMERA",
         "RECORD_AUDIO",
         "MODIFY_AUDIO_SETTINGS",
         "INTERNET",
-        "ACCESS_NETWORK_STATE"
+        "ACCESS_NETWORK_STATE",
+        "android.permission.POST_NOTIFICATIONS"
       ],
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
@@ -39,16 +47,31 @@
         "backgroundImage": "./assets/images/communica-screen.png",
         "monochromeImage": "./assets/images/communica-screen.png"
       },
-      "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false
     },
+
     "web": {
       "bundler": "metro",
       "output": "static",
       "favicon": "./assets/images/icon.png"
     },
+
     "plugins": [
       "expo-router",
+      "@react-native-firebase/app",
+      "@react-native-firebase/messaging",
+
+      [
+        "expo-build-properties",
+        {
+          "ios": {
+            "useFrameworks": "static"
+          }
+        }
+      ],
+
+      "expo-notifications",
+
       [
         "expo-splash-screen",
         {
@@ -62,6 +85,7 @@
         }
       ]
     ],
+
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true

@@ -1,4 +1,4 @@
-// app/(tabs)/chat-detail.tsx
+
 import { useLocalSearchParams, useRouter } from "expo-router";
 import {
   ArrowLeft,

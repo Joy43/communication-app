@@ -9,6 +9,7 @@ interface RegisterData {
 interface LoginData {
   email: string;
   password: string;
+  fcmToken?: string;
 }
 
 interface VerifyOTPData {
@@ -36,6 +37,7 @@ interface AuthResponse {
       email: string;
       role: string;
       status: string;
+      fcmToken?: string;
       isVerified: boolean;
       lastLoginAt: string;
       lastActiveAt: string;
@@ -59,8 +61,22 @@ interface LoginResponse {
       id: string;
       email: string;
       name: string;
+      role: string;
+      status: string;
+      fcmToken?: string;
+      isVerified: boolean;
+      lastLoginAt: string;
+      lastActiveAt: string;
+      profilePictureId: string | null;
+      profilePictureUrl: string | null;
+      createdAt: string;
+      updatedAt: string;
     };
-    token: string;
+    token: {
+      accessToken: string;
+      refreshToken: string;
+      refreshTokenExpiresAt: string;
+    };
   };
 }
 

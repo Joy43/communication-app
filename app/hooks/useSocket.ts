@@ -43,10 +43,10 @@ export const useSocket = () => {
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [messages, setMessages] = useState<{ [key: string]: Message[] }>({});
   const [typingUsers, setTypingUsers] = useState<{ [key: string]: string[] }>(
-    {}
+    {},
   );
   const [onlineUsers, setOnlineUsers] = useState<{ [key: string]: boolean }>(
-    {}
+    {},
   );
 
   const token = useAppSelector(selectaccessToken);
@@ -54,13 +54,33 @@ export const useSocket = () => {
   const currentUserId = currentUser?.id;
 
   useEffect(() => {
-    if (!token) return;
+    if (!token) {
+      console.warn("useSocket: No token available, skipping connection");
+      return;
+    }
+
+    // Validate token format (should be a valid JWT with 3 parts separated by dots)
+    if (typeof token !== "string" || !token.includes(".")) {
+      console.error("useSocket: Invalid token format:", typeof token);
+      return;
+    }
 
     // Initialize socket connection
     // base url from .env
-    const socket = io(`${process.env.EXPO_PUBLIC_BASE_API}/message`, {
+    const socketUrl = `${process.env.EXPO_PUBLIC_BASE_API}/message`;
+    console.log(
+      "useSocket: Connecting to:",
+      socketUrl,
+      "with token length:",
+      token.length,
+    );
+
+    const socket = io(socketUrl, {
       auth: { token },
       transports: ["websocket"],
+      reconnectionDelay: 1000,
+      reconnectionDelayMax: 5000,
+      reconnectionAttempts: 5,
     });
 
     socketRef.current = socket;
@@ -88,6 +108,19 @@ export const useSocket = () => {
 
     socket.on("error", (error) => {
       console.error("Socket error:", error);
+
+      // Check for JWT-related errors
+      if (
+        error?.message?.includes("jwt") ||
+        error?.message?.includes("token") ||
+        error?.message?.includes("unauthorized")
+      ) {
+        console.error("🔐 JWT/Token Error detected - possible causes:");
+        console.error("  1. Token has expired");
+        console.error("  2. Token is malformed");
+        console.error("  3. Server restarted and invalidated tokens");
+        console.error("  4. Token format mismatch with server expectations");
+      }
     });
 
     // Conversation events
@@ -154,7 +187,7 @@ export const useSocket = () => {
         // Sort by most recent
         return updated.sort(
           (a, b) =>
-            new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
+            new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime(),
         );
       });
     });
@@ -178,7 +211,7 @@ export const useSocket = () => {
       setMessages((prev) => ({
         ...prev,
         [data.conversationId]: (prev[data.conversationId] || []).filter(
-          (msg) => msg.id !== data.messageId
+          (msg) => msg.id !== data.messageId,
         ),
       }));
     });
@@ -198,7 +231,7 @@ export const useSocket = () => {
       setTypingUsers((prev) => ({
         ...prev,
         [data.conversationId]: (prev[data.conversationId] || []).filter(
-          (id) => id !== data.userId
+          (id) => id !== data.userId,
         ),
       }));
     });
@@ -235,7 +268,7 @@ export const useSocket = () => {
   const sendMessage = (
     recipientId: string,
     content: string,
-    messageType = "TEXT"
+    messageType = "TEXT",
   ) => {
     if (!socketRef.current) return;
 

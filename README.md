@@ -1,4 +1,16 @@
 # Welcome to your Expo app 👋
+```
+
+# Install build properties plugin
+npx expo install expo-build-properties
+
+# Clear cache
+npx expo start --clear
+
+# Delete old native folders & rebuild
+rm -rf android ios
+npx expo run:android
+```
 
 This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
 
