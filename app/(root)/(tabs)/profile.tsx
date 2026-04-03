@@ -1,6 +1,7 @@
-import { logout } from "@/app/redux/auth/auth.slice";
-import { useAppSelector } from "@/app/redux/hook";
-import { AppDispatch } from "@/app/redux/store";
+
+import { logout } from "@/src/redux/auth/auth.slice";
+import { useAppSelector } from "@/src/redux/hook";
+import { AppDispatch } from "@/src/redux/store";
 import { useRouter } from "expo-router";
 import {
   ArrowLeft,

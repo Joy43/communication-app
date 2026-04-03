@@ -1,10 +1,11 @@
-import CategoryTabs from "@/app/components/Home/CategoryTabs";
-import { Header } from "@/app/components/Home/header";
-import PostCard from "@/app/components/Home/postCard";
+
 import { useRouter } from "expo-router";
 import { FlatList, Text, TextInput, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { POSTS } from "./postsData";
+import { Header } from "@/src/components/Home/header";
+import CategoryTabs from "@/src/components/Home/CategoryTabs";
+import PostCard from "@/src/components/Home/postCard";
 
 interface PostsScreenProps {
   title: string;

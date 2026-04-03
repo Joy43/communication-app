@@ -13,9 +13,12 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 import Toast from "react-native-toast-message";
 import { useDispatch } from "react-redux";
-import { useVerifyOTPMutation, useResendOTPMutation } from "../redux/auth/auth.api";
-import { setUser } from "../redux/auth/auth.slice";
-import { AppDispatch } from "../redux/store";
+import {
+  useResendOTPMutation,
+  useVerifyOTPMutation,
+} from "../../src/redux/auth/auth.api";
+import { setUser } from "../../src/redux/auth/auth.slice";
+import { AppDispatch } from "../../src/redux/store";
 
 export default function VerifyOTPScreen() {
   const { email } = useLocalSearchParams<{ email: string }>();
@@ -83,7 +86,7 @@ export default function VerifyOTPScreen() {
             status: result.data.user.status as "ACTIVE" | "INACTIVE" | "BANNED",
           },
           accessToken: result.data.token.accessToken,
-        })
+        }),
       );
 
       Toast.show({

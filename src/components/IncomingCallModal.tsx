@@ -25,10 +25,10 @@ export const IncomingCallModal = () => {
         "IncomingCallModal: Displaying incoming call from",
         incomingCall.callerName,
       );
-      // Start vibration pattern
+    
       Vibration.vibrate([0, 1000, 1000], true);
 
-      // Pulse animation
+
       Animated.loop(
         Animated.sequence([
           Animated.timing(pulseAnim, {

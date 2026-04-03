@@ -1,7 +1,8 @@
-import { useSocket } from "@/app/hooks/useSocket";
-import { selectaccessToken, selectUser } from "@/app/redux/auth/auth.slice";
-import { useGetPrivateChatUsersQuery } from "@/app/redux/features/message/message.api";
-import { useAppSelector } from "@/app/redux/hook";
+
+import { useSocket } from "@/src/hooks/useSocket";
+import { selectaccessToken, selectUser } from "@/src/redux/auth/auth.slice";
+import { useGetPrivateChatUsersQuery } from "@/src/redux/features/message/message.api";
+import { useAppSelector } from "@/src/redux/hook";
 import { useRouter } from "expo-router";
 import { ArrowLeft, Search } from "lucide-react-native";
 import {

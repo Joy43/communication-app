@@ -2,33 +2,47 @@ export default {
   expo: {
     name: "communication-app",
     slug: "communication-app",
+    owner: "ssjoy43", 
     scheme: "communicationapp",
+    version: "1.0.0",
+    orientation: "portrait",
+    icon: "./assets/images/icon.png",
+    userInterfaceStyle: "automatic",
+
     extra: {
       BASE_URL:
         process.env.EXPO_PUBLIC_BASE_API ||
         "https://communication-app-server.onrender.com",
+      router: {},
       eas: {
-        projectId: "c203ab17-b340-4526-88ef-7788162a6524",
+        projectId: "f8aa592d-358d-4183-ad5f-62a0ddc5d279", 
       },
     },
 
     ios: {
       supportsTablet: true,
       bundleIdentifier: "com.ssjoy43.communicationapp",
+      googleServicesFile: "./GoogleService-Info.plist", 
       infoPlist: {
         NSCameraUsageDescription: "Camera access for video calls",
         NSMicrophoneUsageDescription: "Microphone access for voice calls",
+        UIUserInterfaceStyle: "Automatic",
+      },
+      entitlements: {
+        "aps-environment": "production", 
       },
     },
 
     android: {
       package: "com.ssjoy43.communicationapp",
+      googleServicesFile: "./google-services.json", 
       permissions: [
         "CAMERA",
         "RECORD_AUDIO",
         "MODIFY_AUDIO_SETTINGS",
         "INTERNET",
         "ACCESS_NETWORK_STATE",
+        "android.permission.POST_NOTIFICATIONS", 
       ],
       adaptiveIcon: {
         foregroundImage: "./assets/images/communica-screen.png",
@@ -47,7 +61,23 @@ export default {
     plugins: [
       "expo-router",
       "expo-audio",
-      "expo-build-properties",
+
+      // ✅ Firebase plugins
+      "@react-native-firebase/app",
+      "@react-native-firebase/messaging",
+
+      // ✅ Required for Firebase iOS static frameworks
+      [
+        "expo-build-properties",
+        {
+          ios: {
+            useFrameworks: "static",
+          },
+        },
+      ],
+
+      "expo-notifications", 
+
       [
         "expo-splash-screen",
         {
@@ -60,6 +90,7 @@ export default {
           },
         },
       ],
+
       [
         "@config-plugins/react-native-webrtc",
         {

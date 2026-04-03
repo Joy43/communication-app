@@ -1,19 +1,20 @@
 import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
-import { ActivityIndicator, Platform, SafeAreaView, View } from "react-native";
+import { ActivityIndicator, SafeAreaView, View } from "react-native";
 import Toast from "react-native-toast-message";
 import { Provider } from "react-redux";
 import { PersistGate } from "redux-persist/integration/react";
-import { IncomingCallModal } from "./components/IncomingCallModal";
-import { WebRTCProvider } from "./contexts/WebRTCContext";
+import { IncomingCallModal } from "../src/components/IncomingCallModal";
+import { WebRTCProvider } from "../src/contexts/WebRTCContext";
+import { useFirebaseMessaging } from "../src/hooks/useFirebaseMessaging";
+import { persistor, store } from "../src/redux/store";
+import { setupBackgroundNotificationHandler } from "../src/services/firebaseMessaging";
 import "./global.css";
-import { useFirebaseMessaging } from "./hooks/useFirebaseMessaging";
-import { persistor, store } from "./redux/store";
 
+setupBackgroundNotificationHandler();
 export default function RootLayout() {
   const appColor = "#10B981";
 
-  //------- Initialize Expo Notifications--------------
   useFirebaseMessaging();
 
   return (
@@ -30,11 +31,7 @@ export default function RootLayout() {
       >
         <WebRTCProvider>
           <SafeAreaView
-            style={{
-              flex: 1,
-              backgroundColor: appColor,
-              paddingTop: Platform.OS === "android" ? 0 : 0,
-            }}
+            style={{ flex: 1, backgroundColor: appColor }}
             className="bg-white"
           >
             <StatusBar style="light" backgroundColor={appColor} animated />
@@ -50,11 +47,9 @@ export default function RootLayout() {
                   options={{ headerShown: false }}
                 />
               </Stack>
-
               <Toast />
             </View>
 
-            {/* Global Incoming Call */}
             <IncomingCallModal />
           </SafeAreaView>
         </WebRTCProvider>

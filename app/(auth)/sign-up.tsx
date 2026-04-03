@@ -13,7 +13,7 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import Toast from "react-native-toast-message";
-import { useRegisterMutation } from "../redux/auth/auth.api";
+import { useRegisterMutation } from "../../src/redux/auth/auth.api";
 
 export default function SignUpScreen() {
   const [name, setName] = useState("");

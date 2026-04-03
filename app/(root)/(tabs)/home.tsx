@@ -1,5 +1,5 @@
 import { useRouter } from "expo-router";
-import PostsScreen from "../../(posts)/PostsScreen";
+import PostsScreen from "../../../app/(posts)/PostsScreen";
 
 export default function Homepage() {
   const router = useRouter();

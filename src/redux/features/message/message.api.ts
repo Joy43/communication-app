@@ -1,6 +1,5 @@
-import { TPrivateChatUser } from "@/app/types/chat.type";
+import { TPrivateChatUser } from "@/src/types/chat.type";
 import { baseAPI } from "../../api/base.api";
-
 
 export const messageAPI = baseAPI.injectEndpoints({
   endpoints: (build) => ({

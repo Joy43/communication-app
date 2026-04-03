@@ -18,37 +18,36 @@ export function useFirebaseMessaging() {
 
     const initializeMessaging = async () => {
       try {
-        // Initialize notifications and request permissions
         const token = await initializeFirebaseMessaging();
 
         if (token) {
           console.log(
-            "✅ Notifications initialized successfully with token:",
+            " Notifications initialized successfully with token:",
             token,
           );
 
-          // Set up foreground notification response handler
+  
           unsubscribeForeground = setupForegroundNotificationHandler();
 
-          // Set up background notification handler
+          //------  Set up background notification handler (for app in background or killed) ------
           await setupBackgroundNotificationHandler();
 
-          // Set up notification received listener (for app in foreground)
+          // ------ Set up notification received listener (for app in foreground) ------
           unsubscribeNotificationReceived = setupNotificationReceivedListener();
         } else {
           console.warn(
-            "⚠️ Notifications initialized but token is null, will retry on login",
+            " Notifications initialized but token is null, will retry on login",
           );
 
-          // Try to get token again after a delay (app might need more time to initialize)
+          // ------- Try to get token again after a delay (app might need more time to initialize) -------
           setTimeout(async () => {
             try {
               const delayedToken = await getFCMToken();
               if (delayedToken) {
-                console.log("✅ Token obtained on retry:", delayedToken);
+                console.log(" Token obtained on retry:", delayedToken);
               }
             } catch (error) {
-              console.warn("⚠️ Retry to get token failed:", error);
+              console.warn("Retry to get token failed:", error);
             }
           }, 2000);
         }
@@ -59,7 +58,7 @@ export function useFirebaseMessaging() {
 
     initializeMessaging();
 
-    // Cleanup function
+    //------- Cleanup function to remove listeners when component unmounts -------
     return () => {
       unsubscribeForeground?.remove?.();
       unsubscribeNotificationReceived?.remove?.();

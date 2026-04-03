@@ -1,4 +1,3 @@
-
 import { useLocalSearchParams, useRouter } from "expo-router";
 import {
   ArrowLeft,
@@ -25,10 +24,10 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import { useWebRTCContext } from "../contexts/WebRTCContext";
-import { useSocket } from "../hooks/useSocket";
-import { selectUser } from "../redux/auth/auth.slice";
-import { useAppSelector } from "../redux/hook";
+import { useWebRTCContext } from "../../src/contexts/WebRTCContext";
+import { useSocket } from "../../src/hooks/useSocket";
+import { selectUser } from "../../src/redux/auth/auth.slice";
+import { useAppSelector } from "../../src/redux/hook";
 
 type Message = {
   id: string;

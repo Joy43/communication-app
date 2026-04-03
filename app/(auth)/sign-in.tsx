@@ -13,10 +13,10 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import Toast from "react-native-toast-message";
-import { useLoginMutation } from "../redux/auth/auth.api";
-import { setUser } from "../redux/auth/auth.slice";
-import { useAppDispatch } from "../redux/hook";
-import { getFCMToken } from "../services/firebaseMessaging";
+import { useLoginMutation } from "../../src/redux/auth/auth.api";
+import { setUser } from "../../src/redux/auth/auth.slice";
+import { useAppDispatch } from "../../src/redux/hook";
+import { getFCMToken } from "../../src/services/firebaseMessaging";
 
 export default function SignInScreen() {
   const [email, setEmail] = useState("");
