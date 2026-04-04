@@ -1,11 +1,7 @@
-
-import { get } from "node:http";
 import { baseAPI } from "../../api/base.api";
-import { create } from "node:domain";
 
 export const PostAPI = baseAPI.injectEndpoints({
   // -----create profile for contributor application------
-
 
   endpoints: (build) => ({
     // ----------create post-----
@@ -56,7 +52,7 @@ export const PostAPI = baseAPI.injectEndpoints({
       providesTags: ["posts"],
     }),
 
-//--------get cetegory by id --------
+    //--------get cetegory by id --------
 
     getCategoryById: build.query({
       query: (categoryId) => ({
@@ -103,7 +99,7 @@ export const PostAPI = baseAPI.injectEndpoints({
         method: "DELETE",
       }),
       invalidatesTags: ["ad-management"],
-    }), 
+    }),
 
     // ---------account setting reviw alert toggle--
     // changeReviewToggle: build.mutation({
@@ -113,19 +109,28 @@ export const PostAPI = baseAPI.injectEndpoints({
     //     body: { reviewAlerts: status },
     //   }),
     // }),
-
+    //------- crate tags-------
+    crateTags: build.mutation({
+      query: (data) => ({
+        url: `/post/create-tags`,
+        method: "POST",
+        body: data,
+      }),
+      invalidatesTags: ["posts"],
+    }),
   }),
 });
 
 export const {
-    useCreatePostMutation,
-    useGetMyPostQuery,
-    useGetPostByIdQuery,
-    useCreateCategoryMutation,
-    useGetAllCategoryQuery,
-    useGetCategoryByIdQuery,
-    useCreateAdsMutation,
-    useGetAllAdsQuery,
-    useUpdateAdsMutation,
-    useDeleteAdsMutation
+  useCreatePostMutation,
+  useGetMyPostQuery,
+  useGetPostByIdQuery,
+  useCreateCategoryMutation,
+  useGetAllCategoryQuery,
+  useGetCategoryByIdQuery,
+  useCreateAdsMutation,
+  useGetAllAdsQuery,
+  useUpdateAdsMutation,
+  useDeleteAdsMutation,
+  useCrateTagsMutation,
 } = PostAPI;

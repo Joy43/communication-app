@@ -40,7 +40,40 @@ export const userAPI = baseAPI.injectEndpoints({
         body: { reviewAlerts: status },
       }),
     }),
+    // --------get user a follower------
+      getUserFollower: build.query({
+        query: (userId) => ({
+          url: `/post/followers/${userId}`,
+          method: "GET",
+        }),
+        providesTags: ["getProfile"],
+      }),
+//  ----crate follow targated userid------
+      crateFollowUser: build.mutation({
+        query: (targetUserId) => ({
+          url: `/post/follow/${targetUserId}`,
+          method: "POST",
+        }),
+        invalidatesTags: ["getProfile"],
+      }), 
+      // ----delete follow targated userid------
+      deleteFollowUser: build.mutation({
+        query: (targetUserId) => ({
+          url: `/post/follow/${targetUserId}`,
+          method: "DELETE",
+        }),
+        invalidatesTags: ["getProfile"],
+      }),
+//----- Check if current user follows target user------
+      checkFollowStatus: build.query({
+        query: (targetUserId) => ({
+          url: `/post/follow/status/${targetUserId}`,
+          method: "GET",
+        }),
+        providesTags: ["getProfile"],
+      }),
 
+     
   }),
 });
 
@@ -48,4 +81,8 @@ export const {
   useUpdateProfileUserMutation,
   useGetUserProfileQuery,
   useChangeReviewToggleMutation,
+  useGetUserFollowerQuery,
+  useCrateFollowUserMutation,
+  useDeleteFollowUserMutation,
+  useCheckFollowStatusQuery,
 } = userAPI;
