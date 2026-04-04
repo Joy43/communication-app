@@ -33,6 +33,8 @@ export const baseAPI = createApi({
   baseQuery: baseQueryAPI,
   tagTypes: [
     "user",
+    "posts",
+    "uploadfiles",
     "message",
     "call",
     "content",
