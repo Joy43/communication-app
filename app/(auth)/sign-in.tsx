@@ -23,6 +23,7 @@ export default function SignInScreen() {
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [fcmToken, setFcmToken] = useState<string | null>(null);
+  const [fcmTokenLoading, setFcmTokenLoading] = useState(true);
 
   const dispatch = useAppDispatch();
   const [loginUserWithEmail, { isLoading }] = useLoginMutation();
@@ -30,13 +31,23 @@ export default function SignInScreen() {
   // Get FCM token on component mount
   useEffect(() => {
     const initializeFCM = async () => {
+      setFcmTokenLoading(true);
       try {
+        console.log("🚀 Initializing FCM token on app launch...");
         const token = await getFCMToken();
         if (token) {
           setFcmToken(token);
+          console.log(
+            "✅ FCM token initialized successfully:",
+            token.substring(0, 20) + "...",
+          );
+        } else {
+          console.warn("⚠️ FCM token is null/empty on initialization");
         }
       } catch (error) {
-        console.warn("Failed to get FCM token:", error);
+        console.warn("❌ Failed to get FCM token:", error);
+      } finally {
+        setFcmTokenLoading(false);
       }
     };
 
@@ -65,61 +76,55 @@ export default function SignInScreen() {
       return;
     }
 
-    try {
-      // Get FCM token - retry logic to ensure we get it
-      let currentFcmToken = fcmToken;
-
-      // If not in state, try to fetch it
-      if (!currentFcmToken) {
-        console.log("⏳ FCM token not in state, fetching...");
-        try {
-          currentFcmToken = await getFCMToken();
-          if (currentFcmToken) {
-            setFcmToken(currentFcmToken);
-            console.log("✅ FCM token fetched successfully:", currentFcmToken);
-          } else {
-            console.warn("⚠️ getFCMToken returned null/empty");
-          }
-        } catch (error) {
-          console.warn("❌ Failed to get FCM token during login:", error);
-        }
-      } else {
-        console.log("✅ Using FCM token from state:", currentFcmToken);
+    // Check if FCM token is available (critical for device creation)
+    // In development with Expo Go, token may be empty string - allow login anyway
+    if (__DEV__) {
+      // Development mode - allow empty token for testing
+      if (fcmToken === null) {
+        // Still loading, wait a bit
+        Toast.show({
+          type: "info",
+          text1: "Setting up...",
+          text2: "Initializing device. Please try again.",
+          position: "bottom",
+        });
+        return;
       }
+    } else {
+      // Production - require valid token
+      if (!fcmToken) {
+        Toast.show({
+          type: "error",
+          text1: "Device Setup Required",
+          text2:
+            "FCM token not available. Please enable notifications and try again.",
+          position: "bottom",
+        });
+        console.warn("❌ Sign-in blocked: FCM token is not available");
+        return;
+      }
+    }
 
-      // Always send fcmToken, even if empty string
+    try {
+      console.log("🔐 Attempting sign-in with FCM token");
+
       const loginPayload: any = {
         email: email.trim(),
         password,
+        fcmToken: fcmToken,
       };
-
-      // Send token if available, otherwise send empty string
-      if (currentFcmToken) {
-        loginPayload.fcmToken = currentFcmToken;
-        console.log("✅ Including FCM token in login");
-      } else {
-        loginPayload.fcmToken = "";
-        console.warn(
-          "⚠️ No FCM token available - proceeding with empty token\n" +
-            "💡 This may be normal if:\n" +
-            "  • Using Expo Go (requires native build for tokens)\n" +
-            "  • Device permissions not granted\n" +
-            "  • Notifications not fully initialized yet",
-        );
-      }
 
       console.log("📤 Login payload:", {
         email: loginPayload.email,
         password: "***",
-        fcmToken: loginPayload.fcmToken || "(empty)",
+        fcmToken: loginPayload.fcmToken.substring(0, 20) + "...",
       });
 
       const result = await loginUserWithEmail(loginPayload).unwrap();
 
       // Login successful
-      console.log("Login successful:", result.data.user);
-      console.log("Access token:", result.data.token.accessToken);
-      console.log("FCM Token from response:", result.data.user.fcmToken);
+      console.log("✅ Login successful:", result.data.user.email);
+      console.log("📱 Device created with FCM token");
 
       // Store user and token in Redux
       dispatch(
@@ -142,7 +147,7 @@ export default function SignInScreen() {
       // Navigate to main app
       router.replace("/(root)/(tabs)/chat");
     } catch (error: any) {
-      console.error("Login failed:", error);
+      console.error("❌ Login failed:", error);
       const errorMessage =
         error?.data?.message || "Login failed. Please try again.";
       Toast.show({
@@ -167,9 +172,6 @@ export default function SignInScreen() {
           <View className="flex-1 px-6 pt-8">
             {/* Logo/Header */}
             <View className="items-center mb-8">
-              <View className="w-20 h-20 bg-blue-500 rounded-full items-center justify-center mb-4">
-                <Text className="text-white text-3xl font-bold">M</Text>
-              </View>
               <Text className="text-3xl font-bold text-gray-900">
                 Welcome Back
               </Text>
@@ -239,13 +241,26 @@ export default function SignInScreen() {
             {/* Sign In Button */}
             <TouchableOpacity
               onPress={handleSignIn}
-              disabled={isLoading}
+              disabled={isLoading || fcmTokenLoading || !fcmToken}
               className={`rounded-xl py-4 items-center mb-6 ${
-                isLoading ? "bg-blue-300" : "bg-blue-500"
+                isLoading || fcmTokenLoading || !fcmToken
+                  ? "bg-blue-300"
+                  : "bg-blue-500"
               }`}
             >
               {isLoading ? (
                 <ActivityIndicator color="white" />
+              ) : fcmTokenLoading ? (
+                <View className="flex-row items-center gap-2">
+                  <ActivityIndicator color="white" size="small" />
+                  <Text className="text-white text-base font-bold">
+                    Setting up device...
+                  </Text>
+                </View>
+              ) : !fcmToken ? (
+                <Text className="text-white text-base font-bold">
+                  Enable Notifications to Sign In
+                </Text>
               ) : (
                 <Text className="text-white text-base font-bold">Sign In</Text>
               )}

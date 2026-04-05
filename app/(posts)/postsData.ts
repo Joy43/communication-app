@@ -124,3 +124,5 @@ export const CATEGORIES = [
   { id: "3", label: "Trending", icon: "🔥", route: "trending" },
   { id: "4", label: "Saved posts", icon: "🔖", route: "saved-posts" },
 ];
+
+export default { POSTS, CATEGORIES };

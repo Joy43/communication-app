@@ -1,4 +1,5 @@
 import { baseAPI } from "../api/base.api";
+import { TUser } from "@/src/types/user.type";
 
 interface RegisterData {
   email: string;
@@ -57,21 +58,7 @@ interface AuthResponse {
 interface LoginResponse {
   message: string;
   data: {
-    user: {
-      id: string;
-      email: string;
-      name: string;
-      role: string;
-      status: string;
-      fcmToken?: string;
-      isVerified: boolean;
-      lastLoginAt: string;
-      lastActiveAt: string;
-      profilePictureId: string | null;
-      profilePictureUrl: string | null;
-      createdAt: string;
-      updatedAt: string;
-    };
+    user: TUser & { fcmToken?: string };
     token: {
       accessToken: string;
       refreshToken: string;

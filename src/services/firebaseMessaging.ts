@@ -2,16 +2,18 @@ import { Platform } from "react-native";
 
 let messaging: any = null;
 
-// Only import Firebase messaging on native platforms (not web)
 try {
   messaging = require("@react-native-firebase/messaging").default;
 } catch (error) {
-  console.warn("⚠️ Firebase messaging not available (development environment)");
+  if (__DEV__) {
+    console.log("ℹ️ Firebase messaging not available in development (Expo Go)");
+  } else {
+    console.warn(
+      "⚠️ Firebase messaging not available (development environment)",
+    );
+  }
 }
 
-/**
- * Request notification permissions and return granted status
- */
 async function requestPermissions(): Promise<boolean> {
   if (!messaging) {
     console.warn("⚠️ Firebase messaging not initialized");
@@ -48,18 +50,14 @@ async function requestPermissions(): Promise<boolean> {
     }
   }
 
-  return true; // Android < 13 doesn't need runtime permission
+  return true;
 }
 
-/**
- * Initialize Firebase Cloud Messaging
- * Call this once in your root layout
- */
 export async function initializeFirebaseMessaging(): Promise<string | null> {
   if (!messaging) {
-    console.warn(
-      "⚠️ Firebase messaging not available (development environment)",
-    );
+    if (__DEV__) {
+      console.log("ℹ️ Firebase messaging not available in development");
+    }
     return null;
   }
 
@@ -78,14 +76,15 @@ export async function initializeFirebaseMessaging(): Promise<string | null> {
   }
 }
 
-/**
- * Get Firebase FCM token
- * Retries up to 3 times with exponential backoff
- */
 export async function getFCMToken(): Promise<string | null> {
   if (!messaging) {
-    console.warn("⚠️ Firebase messaging not available");
-    return null;
+    if (__DEV__) {
+      console.log(
+        "ℹ️ Firebase messaging not available - using mock token for development",
+      );
+    }
+    // Return empty string in development (fallback gracefully)
+    return "";
   }
 
   const maxRetries = 3;
@@ -113,7 +112,7 @@ export async function getFCMToken(): Promise<string | null> {
     }
 
     if (attempt < maxRetries) {
-      const delay = 500 * Math.pow(2, attempt - 1); // 500ms, 1s, 2s
+      const delay = 500 * Math.pow(2, attempt - 1);
       console.log(`⏳ Retrying in ${delay}ms...`);
       await new Promise((resolve) => setTimeout(resolve, delay));
     }
@@ -123,10 +122,6 @@ export async function getFCMToken(): Promise<string | null> {
   return null;
 }
 
-/**
- * Listen for foreground messages (app is open)
- * Returns an unsubscribe function
- */
 export function setupForegroundNotificationHandler(): () => void {
   if (!messaging) {
     console.warn("⚠️ Firebase messaging not available");
@@ -135,17 +130,11 @@ export function setupForegroundNotificationHandler(): () => void {
 
   const unsubscribe = messaging().onMessage(async (remoteMessage: any) => {
     console.log("📬 Foreground message received:", remoteMessage);
-    // You can show a local notification here if needed
-    // or dispatch to Redux, update UI, etc.
   });
 
   return unsubscribe;
 }
 
-/**
- * Handle background/quit state messages
- * Must be called OUTSIDE of any component (top level of index.ts or _layout.tsx)
- */
 export function setupBackgroundNotificationHandler(): void {
   if (!messaging) {
     console.warn("⚠️ Firebase messaging not available");
@@ -173,17 +162,12 @@ export async function setupBackgroundNotificationHandlerAsync(): Promise<void> {
         "📬 App opened from quit state via notification:",
         initialNotification,
       );
-      // Handle deep linking here
     }
   } catch (error) {
     console.error("❌ Error getting initial notification:", error);
   }
 }
 
-/**
- * Listen for notification tap when app is in background (not quit)
- * Returns an unsubscribe function
- */
 export function setupNotificationReceivedListener(): () => void {
   if (!messaging) {
     console.warn("⚠️ Firebase messaging not available");
@@ -193,17 +177,12 @@ export function setupNotificationReceivedListener(): () => void {
   const unsubscribe = messaging().onNotificationOpenedApp(
     (remoteMessage: any) => {
       console.log("📬 Notification opened app from background:", remoteMessage);
-      // Handle deep linking / navigation here
     },
   );
 
   return unsubscribe;
 }
 
-/**
- * Listen for token refresh
- * Returns an unsubscribe function
- */
 export function onTokenRefresh(callback: (token: string) => void): () => void {
   if (!messaging) {
     console.warn("⚠️ Firebase messaging not available");
@@ -217,9 +196,6 @@ export function onTokenRefresh(callback: (token: string) => void): () => void {
   });
 }
 
-/**
- * Subscribe to a topic (server-side fan-out)
- */
 export async function subscribeToNotifications(topic: string): Promise<void> {
   if (!messaging) {
     console.warn("⚠️ Firebase messaging not available");

@@ -1,124 +1,151 @@
 import { Tabs } from "expo-router";
 import { HomeIcon, MessageCircle, User2, Users } from "lucide-react-native";
-import { Platform, useColorScheme } from "react-native";
+import { Platform, useColorScheme, useWindowDimensions, View, Text } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+
+
+const BP = { tablet: 600, large: 840 } as const;
 
 export default function TabLayout() {
   const colorScheme = useColorScheme();
-  const insets = useSafeAreaInsets();
+  const insets        = useSafeAreaInsets();
+  const { width }     = useWindowDimensions();
 
-  const colors = {
-    light: {
-      primary: "#0084FF",
-      background: "#FFFFFF",
-      tabBar: "#FFFFFF",
-      inactive: "#8E8E93",
-      border: "#E5E5EA",
-      activeBackground: "#E8F4FD",
-    },
-    dark: {
-      primary: "#0A84FF",
-      background: "#000000",
-      tabBar: "#1C1C1E",
-      inactive: "#8E8E93",
-      border: "#38383A",
-      activeBackground: "#1A2838",
-    },
+  const isTablet      = width >= BP.tablet;
+  const isLarge       = width >= BP.large;
+  const isDark        = colorScheme === "dark";
+
+  // ─── design tokens ───────────────────────────────────────────────────────────
+  const theme = {
+    primary:       isDark ? "#0A84FF" : "#0084FF",
+    tabBar:        isDark ? "#1C1C1E" : "#FFFFFF",
+    inactive:      "#8E8E93",
+    activeBg:      isDark ? "#1A2838" : "#E8F4FD",
+    shadowOpacity: isDark ? 0.6 : 0.12,
   };
 
-  const theme = colorScheme === "dark" ? colors.dark : colors.light;
+  // ─── design constants ───────────────────────────────────────────────────────
+  const BAR_HEIGHT = isTablet ? 72 : 64;
+  const ICON_SIZE  = isLarge  ? 26 : isTablet ? 24 : 22;
+  const LABEL_SIZE = isLarge  ? 12 : isTablet ? 11 : 10;
+
+  // Floating pill horizontal inset
+  const hInset = isLarge
+    ? (width - 640) / 2
+    : isTablet ? 32 : 16;
+
+  // iOS needs extra room for the home indicator
+  const bottomInset = Platform.OS === "ios"
+    ? insets.bottom + (isTablet ? 14 : 8)
+    : isTablet ? 14 : 10;
+
+
+  const makeIcon = (
+    Icon: React.ElementType,
+    label: string,
+    withFill = false,
+  ) =>
+    ({ color, focused }: { color: string; focused: boolean }) => (
+      <View
+        className="flex-1 flex-col items-center justify-center"
+        style={{ minHeight: BAR_HEIGHT, gap: 2 }}
+      >
+        <Icon
+          color={color}
+          size={ICON_SIZE}
+          strokeWidth={focused ? 2.5 : 2}
+          {...(withFill ? { fill: focused ? color : "none" } : {})}
+        />
+        <Text
+          className="font-semibold tracking-wide"
+          style={{
+            fontSize:  LABEL_SIZE,
+            color,
+            lineHeight: LABEL_SIZE + 3,
+          }}
+          numberOfLines={1}
+        >
+          {label}
+        </Text>
+      </View>
+    );
 
   return (
     <Tabs
       screenOptions={{
-        headerShown: false,
-        tabBarActiveTintColor: theme.primary,
+        headerShown:     false,
+        tabBarShowLabel: false, // our makeIcon renders the label
+
+        tabBarActiveTintColor:   theme.primary,
         tabBarInactiveTintColor: theme.inactive,
+
+        // ── floating pill bar ─────────────────────────────────────────────────
         tabBarStyle: {
-          position: "absolute",
-          bottom: Platform.OS === "ios" ? insets.bottom + 10 : 12,
-          left: 16,
-          right: 16,
-          height: 65,
-          borderTopWidth: 0,
-          backgroundColor: theme.tabBar,
-          borderRadius: 24,
-          paddingTop: 8,
-          paddingBottom: 8,
-          paddingHorizontal: 4,
-          shadowColor: "#000",
-          shadowOffset: { width: 0, height: 8 },
-          shadowOpacity: colorScheme === "dark" ? 0.6 : 0.12,
-          shadowRadius: 16,
-          elevation: 12,
+          position:         "absolute",
+          bottom:           bottomInset,
+          left:             hInset,
+          right:            hInset,
+          height:           BAR_HEIGHT,
+          borderTopWidth:   0,
+          backgroundColor:  theme.tabBar,
+          borderRadius:     24,
+          paddingHorizontal: isTablet ? 8 : 4,
+          shadowColor:      "#000",
+          shadowOffset:     { width: 0, height: 6 },
+          shadowOpacity:    theme.shadowOpacity,
+          shadowRadius:     18,
+          elevation:        12,
+          overflow:         "hidden",
         },
-        tabBarLabelStyle: {
-          fontSize: 11,
-          fontWeight: "600",
-          marginTop: 2,
-          marginBottom: 4,
-        },
+
+        // ── per-item ──────────────────────────────────────────────────────────
+        // No height, no paddingVertical — that's the key fix.
         tabBarItemStyle: {
-          paddingVertical: 8,
-          borderRadius: 16,
-          marginHorizontal: 2,
-          height: 65,
+          borderRadius:     18,
+          marginHorizontal: isTablet ? 4 : 2,
+          paddingTop:       0,
+          paddingBottom:    0,
         },
-        tabBarActiveBackgroundColor: theme.activeBackground,
+
+        tabBarActiveBackgroundColor: theme.activeBg,
       }}
     >
-      // home tabBar icon is a house, but we will use the message circle icon
-      for now
+      {/* Home */}
       <Tabs.Screen
         name="home"
         options={{
-          title: "Home",
-          tabBarIcon: ({ color, focused }) => (
-            <HomeIcon
-              color={color}
-              size={24}
-              fill={focused ? color : "none"}
-              strokeWidth={focused ? 2.5 : 2}
-            />
-          ),
+          title:       "Home",
+          tabBarIcon:  makeIcon(HomeIcon, "Home", true),
         }}
       />
-      <Tabs.Screen
-        name="posts"
-        options={{
-          href: null,
-        }}
-      />
+
+      {/* Posts – hidden */}
+      <Tabs.Screen name="posts" options={{ href: null }} />
+
+      {/* Chat */}
       <Tabs.Screen
         name="chat"
         options={{
-          title: "Chats",
-          tabBarIcon: ({ color, focused }) => (
-            <MessageCircle
-              color={color}
-              size={24}
-              fill={focused ? color : "none"}
-              strokeWidth={focused ? 2.5 : 2}
-            />
-          ),
+          title:      "Chats",
+          tabBarIcon: makeIcon(MessageCircle, "Chats", true),
         }}
       />
+
+      {/* Contacts */}
       <Tabs.Screen
         name="contacts"
         options={{
-          title: "Contacts",
-          tabBarIcon: ({ color, focused }) => (
-            <Users color={color} size={24} strokeWidth={focused ? 2.5 : 2} />
-          ),
+          title:      "Contacts",
+          tabBarIcon: makeIcon(Users, "Contacts"),
         }}
       />
+
+      {/* Profile */}
       <Tabs.Screen
         name="profile"
         options={{
-          title: "Profile",
-          tabBarIcon: ({ color, focused }) => (
-            <User2 color={color} size={24} strokeWidth={focused ? 2.5 : 2} />
-          ),
+          title:      "Profile",
+          tabBarIcon: makeIcon(User2, "Profile"),
         }}
       />
     </Tabs>
