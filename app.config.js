@@ -91,14 +91,16 @@ export default {
         },
       ],
 
-      [
-        "@config-plugins/react-native-webrtc",
-        {
-          cameraPermission: "Allow $(PRODUCT_NAME) to access your camera",
-          microphonePermission:
-            "Allow $(PRODUCT_NAME) to access your microphone",
-        },
-      ],
+      // ⚠️ Temporarily disabled: react-native-webrtc incompatible with RN 0.81.5
+      // Will re-enable with compatible version after successful build
+      // [
+      //   "@config-plugins/react-native-webrtc",
+      //   {
+      //     cameraPermission: "Allow $(PRODUCT_NAME) to access your camera",
+      //     microphonePermission:
+      //       "Allow $(PRODUCT_NAME) to access your microphone",
+      //   },
+      // ],
     ],
 
     experiments: {
