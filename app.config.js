@@ -2,7 +2,7 @@ export default {
   expo: {
     name: "communication-app",
     slug: "communication-app",
-    owner: "ssjoy43", 
+    owner: "ssjoy43",
     scheme: "communicationapp",
     version: "1.0.0",
     orientation: "portrait",
@@ -15,34 +15,34 @@ export default {
         "https://communication-app-server.onrender.com",
       router: {},
       eas: {
-        projectId: "f8aa592d-358d-4183-ad5f-62a0ddc5d279", 
+        projectId: "f8aa592d-358d-4183-ad5f-62a0ddc5d279",
       },
     },
 
     ios: {
       supportsTablet: true,
       bundleIdentifier: "com.ssjoy43.communicationapp",
-      googleServicesFile: "./GoogleService-Info.plist", 
+      googleServicesFile: "./GoogleService-Info.plist",
       infoPlist: {
         NSCameraUsageDescription: "Camera access for video calls",
         NSMicrophoneUsageDescription: "Microphone access for voice calls",
         UIUserInterfaceStyle: "Automatic",
       },
       entitlements: {
-        "aps-environment": "production", 
+        "aps-environment": "production",
       },
     },
 
     android: {
       package: "com.ssjoy43.communicationapp",
-      googleServicesFile: "./google-services.json", 
+      googleServicesFile: "./google-services.json",
       permissions: [
         "CAMERA",
         "RECORD_AUDIO",
         "MODIFY_AUDIO_SETTINGS",
         "INTERNET",
         "ACCESS_NETWORK_STATE",
-        "android.permission.POST_NOTIFICATIONS", 
+        "android.permission.POST_NOTIFICATIONS",
       ],
       adaptiveIcon: {
         foregroundImage: "./assets/images/communica-screen.png",
@@ -61,12 +61,12 @@ export default {
     plugins: [
       "expo-router",
       "expo-audio",
-
-      // ✅ Firebase plugins
+      "expo-notifications",
       "@react-native-firebase/app",
       "@react-native-firebase/messaging",
+      "expo-image-picker",
 
-      // ✅ Required for Firebase iOS static frameworks
+  
       [
         "expo-build-properties",
         {
@@ -76,7 +76,7 @@ export default {
         },
       ],
 
-      "expo-notifications", 
+      "expo-notifications",
 
       [
         "expo-splash-screen",

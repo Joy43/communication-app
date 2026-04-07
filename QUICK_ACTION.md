@@ -28,11 +28,13 @@ Removed incompatible packages → Gradle can now compile ✅
 ## What You Need To Do Now 📋
 
 ### Step 1: Monitor the Build (🕐 15-30 minutes)
+
 - **Go to**: https://expo.dev/accounts/ssjoy43/projects/communication-app/builds
 - **Look for**: Build `73926a68-8101-43d0-893f-84e66e693186`
 - **Wait for**: "Build succeeded" status
 
 ### Step 2: If Build Succeeds ✅
+
 ```bash
 # Download APK from EAS dashboard, then:
 adb install -r app-release.apk
@@ -41,6 +43,7 @@ adb install -r app-release.apk
 ```
 
 ### Step 3: Test the App
+
 - Launch app on Android device
 - Sign in with credentials
 - Test core features:
@@ -50,6 +53,7 @@ adb install -r app-release.apk
   - (⚠️ Video calls disabled for now)
 
 ### Step 4: If Build Fails ❌
+
 - Check `GRADLE_FIX_SUMMARY.md` for next steps
 - Most likely: Retry or clear cache
 - Worst case: Disable more native modules (see docs)
@@ -58,15 +62,15 @@ adb install -r app-release.apk
 
 ## Key Facts 📌
 
-| Item | Status |
-|------|--------|
-| WebRTC Calls | ⚠️ Temporarily disabled |
-| Core Features | ✅ All working |
-| Messaging | ✅ Works |
-| Posts/Feed | ✅ Works |
-| Notifications | ✅ Works |
-| Build Status | 🟡 In queue |
-| Expected Result | ✅ Should succeed |
+| Item            | Status                  |
+| --------------- | ----------------------- |
+| WebRTC Calls    | ⚠️ Temporarily disabled |
+| Core Features   | ✅ All working          |
+| Messaging       | ✅ Works                |
+| Posts/Feed      | ✅ Works                |
+| Notifications   | ✅ Works                |
+| Build Status    | 🟡 In queue             |
+| Expected Result | ✅ Should succeed       |
 
 ---
 
@@ -99,11 +103,11 @@ Build status tracking:
 
 ## Timeline 🕐
 
-| Time | Event |
-|------|-------|
-| Now | Build submitted |
-| +2-5 min | Build enters queue |
-| +15-30 min | Build completes |
+| Time       | Event                  |
+| ---------- | ---------------------- |
+| Now        | Build submitted        |
+| +2-5 min   | Build enters queue     |
+| +15-30 min | Build completes        |
 | +30-40 min | APK ready for download |
 
 ---
@@ -111,6 +115,7 @@ Build status tracking:
 ## Success Indicators 🎉
 
 You'll know it worked when:
+
 1. ✅ EAS dashboard shows "Build succeeded"
 2. ✅ APK is available for download
 3. ✅ APK installs without errors

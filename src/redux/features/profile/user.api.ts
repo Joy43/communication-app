@@ -1,7 +1,4 @@
-
 import { baseAPI } from "../../api/base.api";
-
-
 
 export const userAPI = baseAPI.injectEndpoints({
   // -----create profile for contributor application------
@@ -13,8 +10,8 @@ export const userAPI = baseAPI.injectEndpoints({
         body: data,
       }),
     }),
-//------ get user profile------
-    getUserProfile: build.query({
+    //------ get user profile------
+    getUser: build.query({
       query: () => ({
         url: `/auth/profile`,
         method: "GET",
@@ -41,45 +38,43 @@ export const userAPI = baseAPI.injectEndpoints({
       }),
     }),
     // --------get user a follower------
-      getUserFollower: build.query({
-        query: (userId) => ({
-          url: `/post/followers/${userId}`,
-          method: "GET",
-        }),
-        providesTags: ["getProfile"],
+    getUserFollower: build.query({
+      query: (userId) => ({
+        url: `/post/followers/${userId}`,
+        method: "GET",
       }),
-//  ----crate follow targated userid------
-      crateFollowUser: build.mutation({
-        query: (targetUserId) => ({
-          url: `/post/follow/${targetUserId}`,
-          method: "POST",
-        }),
-        invalidatesTags: ["getProfile"],
-      }), 
-      // ----delete follow targated userid------
-      deleteFollowUser: build.mutation({
-        query: (targetUserId) => ({
-          url: `/post/follow/${targetUserId}`,
-          method: "DELETE",
-        }),
-        invalidatesTags: ["getProfile"],
+      providesTags: ["getProfile"],
+    }),
+    //  ----crate follow targated userid------
+    crateFollowUser: build.mutation({
+      query: (targetUserId) => ({
+        url: `/post/follow/${targetUserId}`,
+        method: "POST",
       }),
-//----- Check if current user follows target user------
-      checkFollowStatus: build.query({
-        query: (targetUserId) => ({
-          url: `/post/follow/status/${targetUserId}`,
-          method: "GET",
-        }),
-        providesTags: ["getProfile"],
+      invalidatesTags: ["getProfile"],
+    }),
+    // ----delete follow targated userid------
+    deleteFollowUser: build.mutation({
+      query: (targetUserId) => ({
+        url: `/post/follow/${targetUserId}`,
+        method: "DELETE",
       }),
-
-     
+      invalidatesTags: ["getProfile"],
+    }),
+    //----- Check if current user follows target user------
+    checkFollowStatus: build.query({
+      query: (targetUserId) => ({
+        url: `/post/follow/status/${targetUserId}`,
+        method: "GET",
+      }),
+      providesTags: ["getProfile"],
+    }),
   }),
 });
 
 export const {
   useUpdateProfileUserMutation,
-  useGetUserProfileQuery,
+  useGetUserQuery,
   useChangeReviewToggleMutation,
   useGetUserFollowerQuery,
   useCrateFollowUserMutation,

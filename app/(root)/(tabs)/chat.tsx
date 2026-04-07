@@ -21,11 +21,11 @@ export default function ChatListScreen() {
   const currentUser = useAppSelector(selectUser);
   const currentUserId = currentUser?.id;
 
-  // Fetch all users
+ 
   const { data: chatUsers, isLoading: usersLoading } =
     useGetPrivateChatUsersQuery(null);
 
-  // Socket for real-time updates
+
   const { isConnected, conversations, onlineUsers } = useSocket();
 
   // Format time ago

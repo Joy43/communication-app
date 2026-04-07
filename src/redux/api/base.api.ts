@@ -1,6 +1,7 @@
 import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 import Constants from "expo-constants";
 
+import { apiLoadingInterceptor } from "../../services/apiLoadingInterceptor";
 import { RootState } from "../store";
 
 // Get the base URL with fallbacks
@@ -28,9 +29,23 @@ const baseQueryAPI = fetchBaseQuery({
   },
 });
 
+/**
+ * Wrapped base query with automatic loading indicator
+ * Shows loading spinner on API requests
+ */
+const baseQueryWithLoading = async (args: any, api: any, extraOptions: any) => {
+  apiLoadingInterceptor.onRequestStart();
+  try {
+    const result = await baseQueryAPI(args, api, extraOptions);
+    return result;
+  } finally {
+    apiLoadingInterceptor.onRequestEnd();
+  }
+};
+
 export const baseAPI = createApi({
   reducerPath: "baseAPI",
-  baseQuery: baseQueryAPI,
+  baseQuery: baseQueryWithLoading,
   tagTypes: [
     "user",
     "posts",

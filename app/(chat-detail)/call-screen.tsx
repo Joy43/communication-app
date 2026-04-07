@@ -43,13 +43,13 @@ export default function CallScreen() {
     callInfo,
   } = useWebRTCContext();
 
-  // Get receiver info from params or callInfo
+  // -------------Get receiver info from params or callInfo -------------
   const [receiverName, setReceiverName] = useState<string>("User");
   const [receiverAvatar, setReceiverAvatar] = useState<string>("U");
   const [profilePictureUrl, setProfilePictureUrl] = useState<string>("");
   const [callDuration, setCallDuration] = useState<string>("");
 
-  // Determine if video call - check multiple sources
+  // ----------- Determine if video call - check multiple sources -----------
   const isVideoCall =
     callType === "VIDEO" || (localStream?.getVideoTracks().length ?? 0) > 0;
 
@@ -60,8 +60,8 @@ export default function CallScreen() {
   useEffect(() => {
     console.log("=== Call Screen Debug ===");
     console.log("callType:", callType);
-    console.log("localStream:", localStream ? "✅ exists" : "❌ null");
-    console.log("remoteStream:", remoteStream ? "✅ exists" : "❌ null");
+    console.log("localStream:", localStream ? " exists" : "❌ null");
+    console.log("remoteStream:", remoteStream ? " exists" : "❌ null");
     console.log("isVideoCall:", isVideoCall);
     console.log("callState:", callState);
     console.log("isSocketConnected:", isSocketConnected);
@@ -114,7 +114,7 @@ export default function CallScreen() {
   ]);
 
   useEffect(() => {
-    // Try to get receiver info from params first
+
     if (params.userName) {
       setReceiverName(params.userName as string);
       const profilePic = params.profilePicture as string;
@@ -132,19 +132,19 @@ export default function CallScreen() {
         );
       }
     }
-    // Then try from callInfo
+    // ------------Then try from callInfo -------------
     else if (callInfo?.recipientName) {
       setReceiverName(callInfo.recipientName);
       setReceiverAvatar(callInfo.recipientName.charAt(0).toUpperCase());
     }
-    // Fallback to callInfo data
+    //------  Fallback to callInfo data ----------
     else if (callInfo?.recipientId) {
       setReceiverName("User");
       setReceiverAvatar("U");
     }
   }, [params, callInfo]);
 
-  // Update call duration every second when connected
+  // ----------- Update call duration every second when connected -----------
   useEffect(() => {
     let interval: ReturnType<typeof setInterval> | undefined;
 
@@ -216,7 +216,7 @@ export default function CallScreen() {
         {remoteStream && isVideoCall ? (
           <View style={{ width, height }} className="bg-black">
             <RTCView
-              streamURL={remoteStream.toURL()}
+              streamURL={(remoteStream as any).toURL()}
               style={{ width, height }}
               objectFit="cover"
             />
@@ -300,7 +300,7 @@ export default function CallScreen() {
               style={{ elevation: 12 }}
             >
               <RTCView
-                streamURL={localStream.toURL()}
+                streamURL={(localStream as any).toURL()}
                 style={{ width: "100%", height: "100%" }}
                 objectFit="cover"
                 mirror={true}

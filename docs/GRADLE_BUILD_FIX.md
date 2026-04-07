@@ -1,6 +1,7 @@
 # Gradle Build Failure - Root Cause & Complete Fix
 
 ## 🔴 Current Issue
+
 ```
 Gradle build failed with unknown error. See logs for the "Run gradlew" phase
 ```
@@ -13,13 +14,14 @@ Your project has **native modules that are incompatible with React Native 0.81.5
 
 ### Problematic Dependencies
 
-| Package | Version | Issue | Reason |
-|---------|---------|-------|--------|
-| `react-native-webrtc` | 124.0.7 | Too new | Expects RN 0.82+ |
-| `@config-plugins/react-native-webrtc` | 13.0.0 | Native compilation fails | Complex native binding |
-| `react-native-worklets` | 0.5.1 | Needs Hermes | We disabled Hermes |
+| Package                               | Version | Issue                    | Reason                 |
+| ------------------------------------- | ------- | ------------------------ | ---------------------- |
+| `react-native-webrtc`                 | 124.0.7 | Too new                  | Expects RN 0.82+       |
+| `@config-plugins/react-native-webrtc` | 13.0.0  | Native compilation fails | Complex native binding |
+| `react-native-worklets`               | 0.5.1   | Needs Hermes             | We disabled Hermes     |
 
 ### Why Gradle Fails
+
 ```
 React Native 0.81.5 (your version)
     ↓ incompatible with
@@ -54,6 +56,7 @@ git status
 ### Step 2: Update app.config.js
 
 Find this section in `app.config.js`:
+
 ```javascript
 "@config-plugins/react-native-webrtc": {
   cameraPermission: "Allow $(PRODUCT_NAME) to access your camera",
@@ -66,17 +69,20 @@ Remove or comment it out.
 ### Step 3: Comment Out WebRTC Code
 
 Find files using WebRTC:
+
 ```bash
 grep -r "react-native-webrtc" src/
 grep -r "WebRTC" src/
 ```
 
 Comment out or remove:
+
 - WebRTC context setup
 - Call screen components
 - Any WebRTC initialization
 
 Key files to check:
+
 - `src/contexts/WebRTCContext.tsx`
 - `app/(chat-detail)/call-screen.tsx`
 - `app/(chat-detail)/chat-detail.tsx`
@@ -109,10 +115,12 @@ eas build --platform android --profile preview
 ## 📊 What Gets Removed
 
 ### Removed Functionality (Temporarily)
+
 - ❌ WebRTC calls (will be re-added later)
 - ❌ React Native Worklets
 
 ### Kept Functionality
+
 - ✅ Messaging
 - ✅ Firebase/FCM
 - ✅ Authentication
@@ -151,15 +159,18 @@ Once you have a working APK, you can:
 ## ⚠️ Important Notes
 
 ### Don't Skip This
+
 WebRTC incompatibility is definitely causing the build failure. This fix is required.
 
 ### Timeline
+
 - Remove packages: 2 minutes
-- Update code: 5-10 minutes  
+- Update code: 5-10 minutes
 - Commit: 1 minute
 - Build: 15-30 minutes
 
 ### Alternative (Risky)
+
 ```bash
 # Downgrade React Native (NOT RECOMMENDED - breaks other things)
 # pnpm add react-native@0.82

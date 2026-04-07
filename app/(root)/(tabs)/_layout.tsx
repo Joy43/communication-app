@@ -74,7 +74,7 @@ export default function TabLayout() {
     <Tabs
       screenOptions={{
         headerShown:     false,
-        tabBarShowLabel: false, // our makeIcon renders the label
+        tabBarShowLabel: false, 
 
         tabBarActiveTintColor:   theme.primary,
         tabBarInactiveTintColor: theme.inactive,
