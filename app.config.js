@@ -43,6 +43,8 @@ export default {
         "INTERNET",
         "ACCESS_NETWORK_STATE",
         "android.permission.POST_NOTIFICATIONS",
+        "android.permission.READ_MEDIA_IMAGES",
+        "android.permission.READ_EXTERNAL_STORAGE",
       ],
       adaptiveIcon: {
         foregroundImage: "./assets/images/communica-screen.png",
@@ -66,7 +68,6 @@ export default {
       "@react-native-firebase/messaging",
       "expo-image-picker",
 
-  
       [
         "expo-build-properties",
         {
@@ -91,8 +92,6 @@ export default {
         },
       ],
 
-      // ⚠️ Temporarily disabled: react-native-webrtc incompatible with RN 0.81.5
-      // Will re-enable with compatible version after successful build
       // [
       //   "@config-plugins/react-native-webrtc",
       //   {

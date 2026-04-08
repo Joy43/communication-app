@@ -47,24 +47,6 @@ export default function ProfileDetailScreen() {
     <SafeAreaView className="flex-1 py-2  mb-6">
       <StatusBar barStyle="dark-content" />
 
-      {/* Header */}
-      {/* <View className="flex-row items-center justify-between px-4 py-3 border-b border-gray-100">
-        <TouchableOpacity
-          onPress={() => {
-            if (router.canGoBack()) {
-              router.back();
-            }
-          }}
-          className="w-10 h-10 items-center justify-center -ml-2"
-        >
-          <ArrowLeft size={24} color="#000" />
-        </TouchableOpacity>
-        <Text className="text-lg font-semibold">Profile</Text>
-        <TouchableOpacity className="w-10 h-10 items-center justify-center -mr-2">
-          <MoreVertical size={24} color="#000" />
-        </TouchableOpacity>
-      </View> */}
-
       <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
         {/* Cover Image */}
         <View className="relative">
@@ -136,7 +118,7 @@ export default function ProfileDetailScreen() {
               onPress={() => router.push("/edit-profile")}
               className="flex-1 py-3 rounded-xl items-center bg-blue-500"
             >
-              <Text className="text-blue-500 text-sm font-semibold">
+              <Text className="text-white text-sm font-semibold">
                 Edit Profile
               </Text>
             </TouchableOpacity>

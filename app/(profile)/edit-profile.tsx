@@ -1,22 +1,19 @@
-import FileUpload from "@/src/components/upload/Upload";
 import {
   useGetUserQuery,
   useUpdateProfileUserMutation,
 } from "@/src/redux/features/profile/user.api";
-import { useRouter } from "expo-router";
+import { useCloudinaryUploadMultipleMutation } from "@/src/redux/features/upload/upload.api";
 import {
-  ArrowLeft,
-  Bell,
-  Briefcase,
-  Calendar,
-  Heart,
-  MapPin,
-  Save,
-  User,
-} from "lucide-react-native";
+  getErrorMessage,
+  pickImageFromLibrary,
+  validateImage,
+} from "@/src/utils";
+import { useRouter } from "expo-router";
+import { ArrowLeft, Camera } from "lucide-react-native";
 import { useEffect, useState } from "react";
 import {
   ActivityIndicator,
+  Image,
   SafeAreaView,
   ScrollView,
   StatusBar,
@@ -42,10 +39,16 @@ interface EditProfileFormData {
 }
 
 const EditProfileScreen = () => {
+  const [image, setImage] = useState<string | null>(null);
+
   const router = useRouter();
+
+  const { data: userProfile } = useGetUserQuery(null);
   const [updateProfile, { isLoading: isUpdating }] =
     useUpdateProfileUserMutation();
-  const { data: userProfile } = useGetUserQuery(null);
+
+  const [uploadFile, { isLoading: isUploading }] =
+    useCloudinaryUploadMultipleMutation();
 
   const [formData, setFormData] = useState<EditProfileFormData>({
     username: "",
@@ -60,7 +63,7 @@ const EditProfileScreen = () => {
     coverUrl: "",
   });
 
-  // Initialize form with existing user data
+  // ------------  Load user data into form when profile is fetched -------------
   useEffect(() => {
     if (userProfile?.data) {
       setFormData({
@@ -88,7 +91,81 @@ const EditProfileScreen = () => {
     }));
   };
 
+  // Image Pick + Upload
+  const handlePickAndUpload = async (type: "avatar" | "cover") => {
+    try {
+      // -------- Pick image using utility  --------
+      const pickedImage = await pickImageFromLibrary({
+        aspect: type === "avatar" ? [1, 1] : [16, 9],
+        quality: 0.7,
+      });
+
+      if (!pickedImage) {
+        return; 
+      }
+
+      // Validate image
+      const validation = validateImage(pickedImage);
+      if (!validation.valid) {
+        Toast.show({
+          type: "error",
+          text1: "Invalid Image",
+          text2: validation.error || "Please select a valid image",
+        });
+        return;
+      }
+
+      setImage(pickedImage.uri);
+
+      // Prepare FormData for upload
+      const formDataUpload = new FormData();
+      formDataUpload.append("files", {
+        uri: pickedImage.uri,
+        name: pickedImage.name,
+        type: pickedImage.type,
+      } as any);
+
+      // Upload file
+      const res = await uploadFile(formDataUpload).unwrap();
+
+      if (!res || !res.urls || res.urls.length === 0) {
+        Toast.show({
+          type: "error",
+          text1: "Upload Failed",
+          text2: "No URL returned from server",
+        });
+        return;
+      }
+
+      const uploadedUrl = res.urls[0];
+
+      // Update form data
+      setFormData((prev) => ({
+        ...prev,
+        ...(type === "avatar"
+          ? { avatarUrl: uploadedUrl }
+          : { coverUrl: uploadedUrl }),
+      }));
+
+      Toast.show({
+        type: "success",
+        text1: "Success",
+        text2: `${type === "avatar" ? "Profile" : "Cover"} image uploaded`,
+      });
+    } catch (error: any) {
+      console.error("Image upload error:", error);
+      const errorMessage = getErrorMessage(error);
+      Toast.show({
+        type: "error",
+        text1: "Upload Failed",
+        text2: errorMessage,
+      });
+    }
+  };
+
+  //  --------- Handle Submit profile update -----------
   const handleUpdateProfile = async () => {
+
     if (!formData.username.trim()) {
       Toast.show({
         type: "error",
@@ -98,20 +175,64 @@ const EditProfileScreen = () => {
       return;
     }
 
+    if (formData.username.length < 3) {
+      Toast.show({
+        type: "error",
+        text1: "Validation Error",
+        text2: "Username must be at least 3 characters",
+      });
+      return;
+    }
+
     try {
-      await updateProfile(formData).unwrap();
+ 
+      const dataToSubmit: any = {
+        username: formData.username.trim(),
+        title: formData.title.trim(),
+        bio: formData.bio.trim(),
+        location: formData.location.trim(),
+        gender: formData.gender,
+        experience: formData.experience.trim(),
+        isToggleNotification: formData.isToggleNotification,
+      };
+
+    
+      if (formData.dateOfBirth?.trim()) {
+        dataToSubmit.dateOfBirth = new Date(formData.dateOfBirth).toISOString();
+      }
+
+      if (formData.avatarUrl?.trim()) {
+        dataToSubmit.profilePictureUrl = formData.avatarUrl;
+      }
+
+      if (formData.coverUrl?.trim()) {
+        dataToSubmit.coverUrl = formData.coverUrl;
+      }
+
+      // Call mutation
+      const response = await updateProfile(dataToSubmit).unwrap();
+
+      console.log("Profile updated successfully:", response);
+
       Toast.show({
         type: "success",
-        text1: "Profile Updated",
-        text2: "Your profile has been updated successfully",
+        text1: "Success",
+        text2: "Profile updated successfully",
       });
-      router.back();
-    } catch (error) {
-      console.error("Update error:", error);
+ 
+      setTimeout(() => {
+        router.back();
+      }, 500);
+    } catch (error: any) {
+      console.error("Profile update error:", error);
+
+      const errorMessage =
+        error?.data?.message || error?.message || "Failed to update profile";
+
       Toast.show({
         type: "error",
         text1: "Update Failed",
-        text2: "Failed to update profile. Please try again.",
+        text2: errorMessage,
       });
     }
   };
@@ -122,238 +243,219 @@ const EditProfileScreen = () => {
 
       {/* Header */}
       <View className="flex-row items-center justify-between px-4 py-3 border-b border-gray-100">
-        <TouchableOpacity
-          onPress={() => router.back()}
-          className="w-10 h-10 items-center justify-center"
-        >
-          <ArrowLeft size={24} color="#000" />
+        <TouchableOpacity onPress={() => router.back()}>
+          <ArrowLeft size={24} />
         </TouchableOpacity>
         <Text className="text-lg font-semibold">Edit Profile</Text>
-        <View className="w-10" />
+        <View />
       </View>
 
-      <ScrollView showsVerticalScrollIndicator={false} className="flex-1">
-        {/* Cover Photo Upload */}
+      <ScrollView>
+        {/*  Cover Upload */}
         <View className="px-4 pt-4">
-          <FileUpload
-            uploadType="cover"
-            onUploadSuccess={(url) =>
-              setFormData((prev) => ({ ...prev, coverUrl: url }))
-            }
-            onUploadError={(error) => {
-              Toast.show({
-                type: "error",
-                text1: "Upload Failed",
-                text2: error,
-              });
-            }}
-            customLabel="Cover Photo"
-            showPreview={true}
-          />
+          <TouchableOpacity onPress={() => handlePickAndUpload("cover")}>
+            <View className="h-40 rounded-2xl overflow-hidden bg-gray-200 justify-center items-center">
+              {formData.coverUrl ? (
+                <Image
+                  source={{ uri: formData.coverUrl }}
+                  className="w-full h-full"
+                />
+              ) : (
+                <Text>Upload Cover</Text>
+              )}
+
+              <View className="absolute bottom-3 right-3 bg-black/60 p-2 rounded-full">
+                {isUploading ? (
+                  <ActivityIndicator color="#fff" />
+                ) : (
+                  <Camera size={18} color="#fff" />
+                )}
+              </View>
+            </View>
+          </TouchableOpacity>
         </View>
 
-        {/* Avatar Section */}
-        <View className="px-4 py-6">
-          {/* Avatar Upload */}
-          <FileUpload
-            uploadType="avatar"
-            onUploadSuccess={(url) =>
-              setFormData((prev) => ({ ...prev, avatarUrl: url }))
-            }
-            onUploadError={(error) => {
-              Toast.show({
-                type: "error",
-                text1: "Upload Failed",
-                text2: error,
-              });
-            }}
-            customLabel="Profile Picture"
-            showPreview={true}
-          />
-
-          <View className="mt-4 mb-6 ml-2">
-            <Text className="text-xs text-gray-500 mb-1">
-              Profile Information
-            </Text>
-            <Text className="text-sm font-semibold text-gray-700">
-              {formData.username || "Your Name"}
-            </Text>
-          </View>
-
-          {/* Form Fields */}
-          <View className="space-y-5">
-            {/* Username */}
+        {/* Avatar */}
+        <View className="items-center -mt-12">
+          <TouchableOpacity onPress={() => handlePickAndUpload("avatar")}>
             <View>
-              <View className="flex-row items-center mb-2">
-                <User size={16} color="#6B7280" />
-                <Text className="text-sm font-semibold text-gray-700 ml-2">
-                  Username
-                </Text>
+              <Image
+                source={{
+                  uri:
+                    formData.avatarUrl || "https://i.ibb.co/2kR5zqR/user.png",
+                }}
+                className="w-24 h-24 rounded-full border-4 border-white"
+              />
+
+              <View className="absolute bottom-0 right-0 bg-blue-500 p-2 rounded-full">
+                {isUploading ? (
+                  <ActivityIndicator size={12} color="#fff" />
+                ) : (
+                  <Camera size={12} color="#fff" />
+                )}
               </View>
+            </View>
+          </TouchableOpacity>
+        </View>
+
+        {/* Info */}
+        <View className="px-4 py-6">
+          <Text className="text-sm font-semibold">
+            {formData.username || "Your Name"}
+          </Text>
+          <Text className="text-xs text-gray-500">
+            {formData.title || "Your Title"}
+          </Text>
+
+          {/* FORM */}
+          <View className="space-y-4 mt-4">
+            {/* Username Field */}
+            <View>
+              <Text className="text-xs font-semibold text-gray-700 mb-1">
+                Username *
+              </Text>
               <TextInput
-                className="border border-gray-300 rounded-lg px-4 py-3 text-gray-900"
                 placeholder="Enter username"
                 value={formData.username}
-                onChangeText={(text) => handleInputChange("username", text)}
+                onChangeText={(t) => handleInputChange("username", t)}
+                className="border border-gray-300 p-3 rounded-lg"
+                editable={!isUpdating}
               />
             </View>
 
-            {/* Title */}
+            {/* Title Field */}
             <View>
-              <View className="flex-row items-center mb-2">
-                <Briefcase size={16} color="#6B7280" />
-                <Text className="text-sm font-semibold text-gray-700 ml-2">
-                  Title
-                </Text>
-              </View>
+              <Text className="text-xs font-semibold text-gray-700 mb-1">
+                Title
+              </Text>
               <TextInput
-                className="border border-gray-300 rounded-lg px-4 py-3 text-gray-900"
                 placeholder="e.g., Software Engineer"
                 value={formData.title}
-                onChangeText={(text) => handleInputChange("title", text)}
+                onChangeText={(t) => handleInputChange("title", t)}
+                className="border border-gray-300 p-3 rounded-lg"
+                editable={!isUpdating}
               />
             </View>
 
-            {/* Bio */}
+            {/* Bio Field */}
             <View>
-              <Text className="text-sm font-semibold text-gray-700 mb-2">
+              <Text className="text-xs font-semibold text-gray-700 mb-1">
                 Bio
               </Text>
               <TextInput
-                className="border border-gray-300 rounded-lg px-4 py-3 text-gray-900 min-h-[100px]"
                 placeholder="Tell us about yourself"
-                value={formData.bio}
-                onChangeText={(text) => handleInputChange("bio", text)}
                 multiline
                 numberOfLines={4}
-                textAlignVertical="top"
+                value={formData.bio}
+                onChangeText={(t) => handleInputChange("bio", t)}
+                className="border border-gray-300 p-3 rounded-lg"
+                editable={!isUpdating}
+                style={{ textAlignVertical: "top" }}
               />
             </View>
 
-            {/* Location */}
+            {/* Location Field */}
             <View>
-              <View className="flex-row items-center mb-2">
-                <MapPin size={16} color="#6B7280" />
-                <Text className="text-sm font-semibold text-gray-700 ml-2">
-                  Location
-                </Text>
-              </View>
+              <Text className="text-xs font-semibold text-gray-700 mb-1">
+                Location
+              </Text>
               <TextInput
-                className="border border-gray-300 rounded-lg px-4 py-3 text-gray-900"
                 placeholder="e.g., New York, USA"
                 value={formData.location}
-                onChangeText={(text) => handleInputChange("location", text)}
+                onChangeText={(t) => handleInputChange("location", t)}
+                className="border border-gray-300 p-3 rounded-lg"
+                editable={!isUpdating}
               />
             </View>
 
-            {/* Gender */}
+            {/* Gender Selection */}
             <View>
-              <View className="flex-row items-center mb-2">
-                <Heart size={16} color="#6B7280" />
-                <Text className="text-sm font-semibold text-gray-700 ml-2">
-                  Gender
-                </Text>
-              </View>
-              <View className="flex-row gap-3">
-                {(["MALE", "FEMALE", "OTHER"] as const).map((option) => (
+              <Text className="text-xs font-semibold text-gray-700 mb-2">
+                Gender
+              </Text>
+              <View className="flex-row gap-2">
+                {["MALE", "FEMALE", "OTHER"].map((g) => (
                   <TouchableOpacity
-                    key={option}
-                    onPress={() => handleInputChange("gender", option)}
-                    className={`flex-1 py-3 rounded-lg items-center border-2 ${
-                      formData.gender === option
+                    key={g}
+                    onPress={() => handleInputChange("gender", g as any)}
+                    className={`flex-1 p-3 rounded-lg border ${
+                      formData.gender === g
                         ? "bg-blue-500 border-blue-500"
-                        : "border-gray-300 bg-white"
+                        : "border-gray-300"
                     }`}
+                    disabled={isUpdating}
                   >
                     <Text
-                      className={`font-semibold ${
-                        formData.gender === option
-                          ? "text-white"
-                          : "text-gray-700"
+                      className={`text-center font-semibold ${
+                        formData.gender === g ? "text-white" : "text-gray-700"
                       }`}
                     >
-                      {option}
+                      {g}
                     </Text>
                   </TouchableOpacity>
                 ))}
               </View>
             </View>
 
-            {/* Date of Birth */}
+            {/* Experience Field */}
             <View>
-              <View className="flex-row items-center mb-2">
-                <Calendar size={16} color="#6B7280" />
-                <Text className="text-sm font-semibold text-gray-700 ml-2">
-                  Date of Birth
-                </Text>
-              </View>
+              <Text className="text-xs font-semibold text-gray-700 mb-1">
+                Experience
+              </Text>
               <TextInput
-                className="border border-gray-300 rounded-lg px-4 py-3 text-gray-900"
-                placeholder="YYYY-MM-DD"
-                value={formData.dateOfBirth}
-                onChangeText={(text) => handleInputChange("dateOfBirth", text)}
+                placeholder="e.g., 5 years"
+                value={formData.experience}
+                onChangeText={(t) => handleInputChange("experience", t)}
+                className="border border-gray-300 p-3 rounded-lg"
+                editable={!isUpdating}
               />
             </View>
 
-            {/* Experience */}
+            {/* Date of Birth Field */}
             <View>
-              <View className="flex-row items-center mb-2">
-                <Briefcase size={16} color="#6B7280" />
-                <Text className="text-sm font-semibold text-gray-700 ml-2">
-                  Experience
-                </Text>
-              </View>
+              <Text className="text-xs font-semibold text-gray-700 mb-1">
+                Date of Birth
+              </Text>
               <TextInput
-                className="border border-gray-300 rounded-lg px-4 py-3 text-gray-900"
-                placeholder="e.g., 5 years at Google"
-                value={formData.experience}
-                onChangeText={(text) => handleInputChange("experience", text)}
+                placeholder="YYYY-MM-DD"
+                value={formData.dateOfBirth}
+                onChangeText={(t) => handleInputChange("dateOfBirth", t)}
+                className="border border-gray-300 p-3 rounded-lg"
+                editable={!isUpdating}
               />
             </View>
 
             {/* Notification Toggle */}
-            <View className="flex-row items-center justify-between py-4 border-t border-gray-100">
-              <View className="flex-row items-center flex-1">
-                <Bell size={16} color="#6B7280" />
-                <Text className="text-sm font-semibold text-gray-700 ml-2">
-                  Enable Notifications
-                </Text>
-              </View>
+            <View className="flex-row items-center justify-between border border-gray-300 p-3 rounded-lg">
+              <Text className="text-sm font-semibold text-gray-700">
+                Enable Notifications
+              </Text>
               <Switch
                 value={formData.isToggleNotification}
                 onValueChange={(value) =>
                   handleInputChange("isToggleNotification", value)
                 }
-                trackColor={{ false: "#D1D5DB", true: "#A7F3D0" }}
-                thumbColor={
-                  formData.isToggleNotification ? "#10B981" : "#6B7280"
-                }
+                disabled={isUpdating}
               />
             </View>
-          </View>
 
-          {/* Action Buttons */}
-          <View className="flex-row gap-3 mt-8 mb-6">
-            <TouchableOpacity
-              onPress={() => router.back()}
-              className="flex-1 py-4 rounded-lg border-2 border-gray-300 items-center"
-            >
-              <Text className="font-semibold text-gray-700">Cancel</Text>
-            </TouchableOpacity>
+            {/* Save Button */}
             <TouchableOpacity
               onPress={handleUpdateProfile}
               disabled={isUpdating}
-              className={`flex-1 py-4 rounded-lg items-center flex-row justify-center gap-2 ${
-                isUpdating ? "bg-gray-400" : "bg-blue-500"
+              className={`p-4 rounded-lg mt-6 items-center ${
+                isUpdating ? "bg-blue-300" : "bg-blue-500"
               }`}
             >
               {isUpdating ? (
-                <ActivityIndicator size={20} color="#fff" />
+                <View className="flex-row items-center gap-2">
+                  <ActivityIndicator color="#fff" />
+                  <Text className="text-white font-semibold">Saving...</Text>
+                </View>
               ) : (
-                <>
-                  <Save size={20} color="#fff" />
-                  <Text className="font-semibold text-white">Save Changes</Text>
-                </>
+                <Text className="text-white font-semibold text-base">
+                  Save Changes
+                </Text>
               )}
             </TouchableOpacity>
           </View>
