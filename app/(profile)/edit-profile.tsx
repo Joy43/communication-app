@@ -1,16 +1,9 @@
-import {
-  useGetUserQuery,
-  useUpdateProfileUserMutation,
-} from "@/src/redux/features/profile/user.api";
+
+import { useGetUserQuery, useUpdateProfileUserMutation } from "@/src/redux/features/profile/user.api";
 import { useCloudinaryUploadMultipleMutation } from "@/src/redux/features/upload/upload.api";
-import {
-  getErrorMessage,
-  pickImageFromLibrary,
-  validateImage,
-} from "@/src/utils";
 import { useRouter } from "expo-router";
-import { ArrowLeft, Camera } from "lucide-react-native";
 import { useEffect, useState } from "react";
+import * as ImagePicker from "expo-image-picker";
 import {
   ActivityIndicator,
   Image,
@@ -24,6 +17,7 @@ import {
   View,
 } from "react-native";
 import Toast from "react-native-toast-message";
+import { ArrowLeft, Camera } from "lucide-react-native";
 
 interface EditProfileFormData {
   username: string;
@@ -91,81 +85,74 @@ const EditProfileScreen = () => {
     }));
   };
 
-  // Image Pick + Upload
+  const pickImage = async () => {
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      quality: 1,
+    });
+
+    if (!result.canceled) {
+      setImage(result.assets[0].uri);
+    }
+  };
+
+  // --------- Handle Pick and Upload Image -----------
   const handlePickAndUpload = async (type: "avatar" | "cover") => {
     try {
-      // -------- Pick image using utility  --------
-      const pickedImage = await pickImageFromLibrary({
-        aspect: type === "avatar" ? [1, 1] : [16, 9],
-        quality: 0.7,
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.All,
+        allowsEditing: true,
+        quality: 1,
       });
 
-      if (!pickedImage) {
-        return; 
-      }
-
-      // Validate image
-      const validation = validateImage(pickedImage);
-      if (!validation.valid) {
-        Toast.show({
-          type: "error",
-          text1: "Invalid Image",
-          text2: validation.error || "Please select a valid image",
-        });
+      if (result.canceled) {
         return;
       }
 
-      setImage(pickedImage.uri);
-
-      // Prepare FormData for upload
-      const formDataUpload = new FormData();
-      formDataUpload.append("files", {
-        uri: pickedImage.uri,
-        name: pickedImage.name,
-        type: pickedImage.type,
+      const imageUri = result.assets[0].uri;
+      const formDataToSend = new FormData();
+      formDataToSend.append("file", {
+        uri: imageUri,
+        type: "image/jpeg",
+        name: `${type}-${Date.now()}.jpg`,
       } as any);
 
-      // Upload file
-      const res = await uploadFile(formDataUpload).unwrap();
+      const uploadResponse = await uploadFile(formDataToSend).unwrap();
 
-      if (!res || !res.urls || res.urls.length === 0) {
+      if (uploadResponse?.data?.[0]?.secure_url) {
+        const uploadedUrl = uploadResponse.data[0].secure_url;
+
+        if (type === "avatar") {
+          setFormData((prev) => ({
+            ...prev,
+            avatarUrl: uploadedUrl,
+          }));
+        } else if (type === "cover") {
+          setFormData((prev) => ({
+            ...prev,
+            coverUrl: uploadedUrl,
+          }));
+        }
+
         Toast.show({
-          type: "error",
-          text1: "Upload Failed",
-          text2: "No URL returned from server",
+          type: "success",
+          text1: "Success",
+          text2: `${type === "avatar" ? "Avatar" : "Cover"} uploaded successfully`,
         });
-        return;
       }
-
-      const uploadedUrl = res.urls[0];
-
-      // Update form data
-      setFormData((prev) => ({
-        ...prev,
-        ...(type === "avatar"
-          ? { avatarUrl: uploadedUrl }
-          : { coverUrl: uploadedUrl }),
-      }));
-
-      Toast.show({
-        type: "success",
-        text1: "Success",
-        text2: `${type === "avatar" ? "Profile" : "Cover"} image uploaded`,
-      });
     } catch (error: any) {
       console.error("Image upload error:", error);
-      const errorMessage = getErrorMessage(error);
       Toast.show({
         type: "error",
         text1: "Upload Failed",
-        text2: errorMessage,
+        text2: error?.message || "Failed to upload image",
       });
     }
   };
 
   //  --------- Handle Submit profile update -----------
   const handleUpdateProfile = async () => {
-
     if (!formData.username.trim()) {
       Toast.show({
         type: "error",
@@ -185,7 +172,6 @@ const EditProfileScreen = () => {
     }
 
     try {
- 
       const dataToSubmit: any = {
         username: formData.username.trim(),
         title: formData.title.trim(),
@@ -196,7 +182,6 @@ const EditProfileScreen = () => {
         isToggleNotification: formData.isToggleNotification,
       };
 
-    
       if (formData.dateOfBirth?.trim()) {
         dataToSubmit.dateOfBirth = new Date(formData.dateOfBirth).toISOString();
       }
@@ -219,7 +204,7 @@ const EditProfileScreen = () => {
         text1: "Success",
         text2: "Profile updated successfully",
       });
- 
+
       setTimeout(() => {
         router.back();
       }, 500);

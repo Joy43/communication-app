@@ -1,15 +1,9 @@
 import EasyLoading from "react-native-easy-loading";
 
-/**
- * EasyLoading Service
- * Provides a centralized interface for showing/hiding loading indicators
- * with consistent messages throughout the app
- */
+
 
 export const easyLoadingService = {
-  /**
-   * Show loading spinner with a message
-   */
+ 
   show: (
     message: string = "Loading...",
     maskType?: "none" | "black" | "clear",

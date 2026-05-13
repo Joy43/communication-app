@@ -242,7 +242,7 @@ export class WebRTCManager {
     }
 
     try {
-      console.log("✅ Processing WebRTC offer for correct call");
+      console.log(" Processing WebRTC offer for correct call");
 
       console.log("Creating RTCSessionDescription from offer");
       const offer = new RTCSessionDescription({
@@ -435,9 +435,9 @@ export class WebRTCManager {
         this.localStream = videoStream;
       }
 
-      this.peerConnection.addTrack(videoTrack, this.localStream);
+      this.peerConnection.addTrack(videoTrack, this.localStream!);
       this.callType = "VIDEO";
-      this.onLocalStream(this.localStream);
+      this.onLocalStream(this.localStream!);
 
       if (this.callId && this.remoteUserId) {
         const offer = await this.peerConnection.createOffer();
@@ -512,7 +512,7 @@ export class WebRTCManager {
 
       this.localStream = await mediaDevices.getUserMedia(constraints);
 
-      this.onLocalStream(this.localStream);
+      this.onLocalStream(this.localStream!);
 
       console.log("Local media setup complete");
     } catch (error) {
@@ -622,7 +622,7 @@ export class WebRTCManager {
               .some((t) => t.id === event.track.id);
 
             if (!trackAlreadyExists) {
-              console.log("📥 Adding new track to remote stream:", {
+              console.log(" Adding new track to remote stream:", {
                 trackKind: event.track.kind,
                 trackId: event.track.id,
               });
@@ -630,11 +630,11 @@ export class WebRTCManager {
             }
 
             // Always callback with the remote stream
-            console.log("📥 Calling onRemoteStream with remote stream");
+            console.log(" Calling onRemoteStream with remote stream");
             this.onRemoteStream(this.remoteStream);
           }
 
-          console.log("📥 ===== ONTRACK COMPLETE =====");
+          console.log(" ===== ONTRACK COMPLETE =====");
         } else {
           console.warn("⚠️ No streams in track event! This is unusual.", {
             track: event.track,
@@ -659,7 +659,7 @@ export class WebRTCManager {
 
       // Process pending offer if one arrived early
       if (this.pendingOffer) {
-        console.log("🔄 Processing pending offer that arrived early");
+        console.log(" Processing pending offer that arrived early");
         const offer = this.pendingOffer;
         this.pendingOffer = null;
         await this.handleWebRTCOffer(offer);
