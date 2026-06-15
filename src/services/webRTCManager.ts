@@ -252,7 +252,7 @@ export class WebRTCManager {
 
       console.log("Setting remote description...");
       await this.peerConnection.setRemoteDescription(offer);
-      console.log("✅ Remote description set successfully");
+      console.log(" Remote description set successfully");
 
       // Process ICE candidates BEFORE creating answer
       console.log("Processing queued ICE candidates...");

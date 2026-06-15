@@ -44,10 +44,14 @@ export default function ProfileDetailScreen() {
   const profileData = userProfile?.data || user;
 
   return (
-    <SafeAreaView className="flex-1 py-2  mb-6">
+    <SafeAreaView className="flex-1 py-2">
       <StatusBar barStyle="dark-content" />
 
-      <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
+      <ScrollView
+        className="flex-1"
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{ paddingBottom: 150 }}
+      >
         {/* Cover Image */}
         <View className="relative">
           <Image

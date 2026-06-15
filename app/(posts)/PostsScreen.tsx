@@ -1,7 +1,6 @@
 
 import { useRouter } from "expo-router";
-import { FlatList, Text, TextInput, View } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { FlatList, Text, View } from "react-native";
 import { POSTS } from "./postsData";
 import { Header } from "@/src/components/Home/header";
 import CategoryTabs from "@/src/components/Home/CategoryTabs";
@@ -13,18 +12,7 @@ interface PostsScreenProps {
   activeTabId: string;
 }
 
-const SearchBar = () => (
-  <View className="bg-white px-4 py-3 border-b border-gray-100">
-    <View className="flex-row items-center bg-gray-100 rounded-full px-4 py-2.5 gap-2">
-      <Text className="text-base">🔍</Text>
-      <TextInput
-        className="flex-1 text-sm text-gray-800 font-medium"
-        placeholder="Search posts, people..."
-        placeholderTextColor="#999"
-      />
-    </View>
-  </View>
-);
+
 
 export default function PostsScreen({
   title,
@@ -39,15 +27,15 @@ export default function PostsScreen({
       "1": "/posts/all-posts",
       "2": "/posts/following",
       "3": "/posts/trending",
-      "4": "/posts/saved-posts",
+      "4": "/posts/entertainment",
+      "5": "/posts/saved-posts",
     };
     router.push(routes[categoryId] as any);
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-white">
+    <View className="flex-1 bg-white">
       <Header />
-      <SearchBar />
       <CategoryTabs
         activeCategory={activeTabId}
         onCategoryChange={handleCategoryChange}
@@ -66,6 +54,6 @@ export default function PostsScreen({
           </View>
         }
       />
-    </SafeAreaView>
+    </View>
   );
 }

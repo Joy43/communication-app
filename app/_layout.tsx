@@ -34,11 +34,12 @@ export default function RootLayout() {
         persistor={persistor}
       >
         <WebRTCProvider>
-          <SafeAreaView
-            style={{ flex: 1, backgroundColor: appColor }}
+          <SafeAreaView 
+            style={{ flex: 1, backgroundColor: appColor }} 
             className="bg-white"
+            edges={['left', 'right', 'bottom']}
           >
-            <StatusBar style="light" backgroundColor={appColor} animated />
+            <StatusBar style="light" backgroundColor="transparent" translucent />
 
             <View style={{ flex: 1, backgroundColor: appColor }}>
               <Stack>

@@ -7,7 +7,7 @@ import { RootState } from "../store";
 // Get the base URL with fallbacks
 const apiUrl =
   Constants.expoConfig?.extra?.EXPO_PUBLIC_BASE_API ||
-  "https://communication-app-server.onrender.com";
+  "http://192.168.0.162:3000";
 console.log("API Base URL:", apiUrl);
 if (!apiUrl) {
   console.error("VITE_API_URL is not set! Check your .env file.");

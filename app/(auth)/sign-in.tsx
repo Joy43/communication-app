@@ -37,7 +37,7 @@ export default function SignInScreen() {
           setFcmToken(token);
           console.log(
             " FCM token:",
-            token ? token.substring(0, 20) + "..." : "null"
+            token
           );
         } else {
           console.log(" No FCM token received");
@@ -85,9 +85,7 @@ export default function SignInScreen() {
       console.log("📤 Login payload:", {
         email: loginPayload.email,
         password: "***",
-        fcmToken: fcmToken
-          ? fcmToken.substring(0, 20) + "..."
-          : "Not provided",
+        fcmToken: fcmToken || "Not provided",
       });
 
       const result = await loginUserWithEmail(loginPayload).unwrap();

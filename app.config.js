@@ -47,7 +47,7 @@ export default {
         "android.permission.READ_EXTERNAL_STORAGE",
       ],
       adaptiveIcon: {
-        foregroundImage: "./assets/images/communica-screen.png",
+        foregroundImage: "./assets/images/icon.png",
         backgroundColor: "#E6F4FE",
       },
       edgeToEdgeEnabled: true,
@@ -82,7 +82,7 @@ export default {
       [
         "expo-splash-screen",
         {
-          image: "./assets/images/communica-screen.png",
+          image: "./assets/images/icon.png",
           imageWidth: 200,
           resizeMode: "contain",
           backgroundColor: "#ffffff",

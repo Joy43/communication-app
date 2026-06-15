@@ -10,6 +10,7 @@ export default function PostsLayout() {
       <Stack.Screen name="all-posts" />
       <Stack.Screen name="following" />
       <Stack.Screen name="trending" />
+      <Stack.Screen name="entertainment" />
       <Stack.Screen name="saved-posts" />
     </Stack>
   );

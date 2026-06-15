@@ -99,7 +99,7 @@ export async function getFCMToken(): Promise<string | null> {
       const token = await messaging().getToken();
 
       if (token && token.length > 0) {
-        console.log("✅ FCM Token retrieved:", token.substring(0, 20) + "...");
+        console.log("✅ FCM Token retrieved:", token);
         return token;
       }
 
@@ -190,7 +190,7 @@ export function onTokenRefresh(callback: (token: string) => void): () => void {
   }
 
   return messaging().onTokenRefresh((token: any) => {
-    console.log("🔄 FCM token refreshed:", token.substring(0, 20) + "...");
+    console.log("🔄 FCM token refreshed:", token);
 
     callback(token);
   });
